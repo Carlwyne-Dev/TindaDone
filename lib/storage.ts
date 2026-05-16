@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import { Product, Transaction, TransactionItem, UtangRecord, RestockLog, BusinessSettings, Expense } from './types';
 
