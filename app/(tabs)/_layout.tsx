@@ -30,8 +30,10 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
   const translateX = useSharedValue(0);
 
   useEffect(() => {
-    translateX.value = withTiming(state.index * TAB_WIDTH, {
-      duration: 300,
+    translateX.value = withSpring(state.index * TAB_WIDTH, {
+      damping: 20,
+      stiffness: 150,
+      mass: 0.8,
     });
   }, [state.index]);
 
@@ -213,7 +215,7 @@ export default function TabLayout() {
             <Settings size={24} color={Theme.colors.primary} />
           </TouchableOpacity>
         ),
-        animation: 'shift',
+        animation: 'fade',
         sceneStyle: { backgroundColor: Theme.colors.background },
       }}
     >
