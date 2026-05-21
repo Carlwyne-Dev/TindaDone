@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Dimensions, Text, Modal, TextInput, Switch, Alert, InteractionManager, Image, ScrollView, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions, Text, Modal, TextInput, Switch, Alert, Platform, InteractionManager, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus } from 'lucide-react-native';
 import { isActivated, getTrialStatus } from '../../lib/license';
@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useColorScheme } from '../../components/useColorScheme';
 import { Theme } from '../../constants/Theme';
-import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES } from '../../lib/storage';
+import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES, seedDemoItems } from '../../lib/storage';
 import { BusinessSettings } from '../../lib/types';
 import { useSettings } from '../../context/SettingsContext';
 import { BlurView } from 'expo-blur';
@@ -125,6 +125,43 @@ export default function TabLayout() {
     setTimeout(() => {
       setShowToast(false);
     }, 2500);
+  };
+
+  const handleSeedDemo = async () => {
+    const doSeed = async () => {
+      try {
+        await seedDemoItems();
+        setIsSettingsOpen(false);
+        if (Platform.OS === 'web') {
+          window.alert('Demo items and sales history loaded successfully!');
+        } else {
+          Alert.alert('Success', 'Demo items and sales history loaded successfully!');
+        }
+      } catch (e) {
+        console.error(e);
+        if (Platform.OS === 'web') {
+          window.alert('Failed to seed demo data.');
+        } else {
+          Alert.alert('Error', 'Failed to seed demo data.');
+        }
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        'This will populate your inventory with 8 realistic products, load 5 days of sales history, mock debts, and expenses. Existing items will NOT be deleted. Proceed?'
+      );
+      if (confirmed) await doSeed();
+    } else {
+      Alert.alert(
+        'Seed Demo Data',
+        'This will populate your inventory with 8 realistic products, load 5 days of sales history, mock debts, and expenses. Existing items will not be deleted. Proceed?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Seed Data', style: 'default', onPress: doSeed }
+        ]
+      );
+    }
   };
 
   const toggleBeep = (val: boolean) => setTempSettings(prev => ({ ...prev, scannerBeep: val }));
@@ -451,6 +488,19 @@ export default function TabLayout() {
                 <View>
                   <Text style={styles.backupTitle}>Full System Backup</Text>
                   <Text style={styles.backupSub}>Export products & ledger (JSON)</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.backupCard, { marginTop: 12, borderColor: Theme.colors.primary + '30' }]} 
+                onPress={handleSeedDemo}
+              >
+                <View style={[styles.backupIcon, { backgroundColor: Theme.colors.primary + '15' }]}>
+                  <Plus size={20} color={Theme.colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.backupTitle}>Seed Demo Data</Text>
+                  <Text style={styles.backupSub}>Populate mock products & history</Text>
                 </View>
               </TouchableOpacity>
             </View>
