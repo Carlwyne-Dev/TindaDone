@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React
+import { LinearGradient } from 'expo-linear-gradient';, { useState, useEffect, useMemo } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -314,7 +315,7 @@ export default function UtangScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.boutiqueHeader}>
+      <LinearGradient colors={['#059669', '#0d9488']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.boutiqueHeader}>
         <View>
           <Text style={styles.boutiqueTitle}>Credit</Text>
           <Text style={styles.boutiqueSubtitle}>Trust Ledger</Text>
@@ -325,7 +326,7 @@ export default function UtangScreen() {
         >
           <Settings size={22} color="#FFF" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <FlatList
         data={filteredRecords}
@@ -647,17 +648,20 @@ const styles = StyleSheet.create({
   },
   boutiqueHeader: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    backgroundColor: Theme.colors.primary,
+    paddingTop: 16,
+    paddingBottom: 28,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: Theme.colors.primary,
+    marginBottom: -10, // Pulls the content up slightly to overlap
+    shadowColor: '#059669',
     shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
+  },
     shadowOpacity: 0.3,
     shadowRadius: 15,
     elevation: 10,
