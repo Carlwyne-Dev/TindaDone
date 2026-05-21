@@ -1,5 +1,5 @@
-import React
-import { LinearGradient } from 'expo-linear-gradient';, { useState, useEffect, useMemo } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   StyleSheet, 
   View, 
