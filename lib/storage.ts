@@ -634,3 +634,258 @@ export async function exportData(): Promise<void> {
     console.error('Error exporting data:', e);
   }
 }
+
+export async function seedDemoItems(): Promise<void> {
+  const demoProducts: Product[] = [
+    {
+      id: 'demo-coke',
+      name: 'Coca-Cola 1.5L',
+      price: 75,
+      costPrice: 62,
+      unit: 'pc',
+      stock: 15,
+      lowStockThreshold: 3,
+      category: 'Drinks',
+      barcode: '4800002201015',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-nescafe',
+      name: 'Nescafe 3-in-1 Original',
+      price: 10,
+      costPrice: 8.5,
+      unit: 'pc',
+      stock: 48,
+      lowStockThreshold: 10,
+      category: 'Drinks',
+      barcode: '4800003302025',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-luckyme',
+      name: 'Lucky Me! Pancit Canton Extra Hot',
+      price: 22,
+      costPrice: 17.5,
+      unit: 'pc',
+      stock: 35,
+      lowStockThreshold: 8,
+      category: 'Food',
+      barcode: '4800016601050',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-safeguard',
+      name: 'Safeguard White Soap 130g',
+      price: 48,
+      costPrice: 39.5,
+      unit: 'pc',
+      stock: 12,
+      lowStockThreshold: 2,
+      category: 'Personal Care',
+      barcode: '4800085501065',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-tide',
+      name: 'Tide Powder Detergent Sachet',
+      price: 12,
+      costPrice: 9.8,
+      unit: 'pc',
+      stock: 60,
+      lowStockThreshold: 15,
+      category: 'Household',
+      barcode: '4800052203040',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-kopiko',
+      name: 'Kopiko Brown Coffee Sachet',
+      price: 12,
+      costPrice: 10,
+      unit: 'pc',
+      stock: 75,
+      lowStockThreshold: 15,
+      category: 'Drinks',
+      barcode: '4800007705052',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-chippy',
+      name: 'Chippy BBQ Chips Large',
+      price: 24,
+      costPrice: 19.5,
+      unit: 'pc',
+      stock: 20,
+      lowStockThreshold: 5,
+      category: 'Food',
+      barcode: '4800016603098',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: 'demo-sanmiguel',
+      name: 'San Miguel Pale Pilsen Can',
+      price: 85,
+      costPrice: 70,
+      unit: 'pc',
+      stock: 24,
+      lowStockThreshold: 6,
+      category: 'Drinks',
+      barcode: '4800005504018',
+      createdAt: new Date().toISOString(),
+    }
+  ];
+
+  // Load existing products
+  let products = await getProducts();
+  
+  // Filter out duplicates
+  const existingIds = new Set(products.map(p => p.id));
+  const newDemos = demoProducts.filter(dp => !existingIds.has(dp.id));
+  
+  if (newDemos.length > 0) {
+    products = [...newDemos, ...products];
+    await saveProducts(products);
+  }
+
+  // Seed demo transactions over last 5 days if none exist
+  const allTrans = await getTransactions();
+  if (allTrans.length === 0) {
+    const today = new Date();
+    const demoTransactions: Transaction[] = [];
+    
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      
+      const transCount = Math.floor(Math.random() * 3) + 2; 
+      for (let j = 0; j < transCount; j++) {
+        const item1 = demoProducts[Math.floor(Math.random() * demoProducts.length)];
+        const item2 = demoProducts[Math.floor(Math.random() * demoProducts.length)];
+        
+        const qty1 = Math.floor(Math.random() * 3) + 1;
+        const qty2 = Math.floor(Math.random() * 2) + 1;
+        
+        const itemsList: TransactionItem[] = [
+          {
+            productId: item1.id,
+            productName: item1.name,
+            qty: qty1,
+            priceAtSale: item1.price,
+            costPriceAtSale: item1.costPrice,
+          }
+        ];
+        
+        if (item1.id !== item2.id) {
+          itemsList.push({
+            productId: item2.id,
+            productName: item2.name,
+            qty: qty2,
+            priceAtSale: item2.price,
+            costPriceAtSale: item2.costPrice,
+          });
+        }
+        
+        const total = itemsList.reduce((sum, item) => sum + (item.priceAtSale * item.qty), 0);
+        const randomHour = Math.floor(Math.random() * 10) + 8; // 8 AM to 6 PM
+        const transDate = new Date(date);
+        transDate.setHours(randomHour, Math.floor(Math.random() * 60));
+        
+        demoTransactions.push({
+          id: `demo-trans-${i}-${j}-${Date.now()}`,
+          items: itemsList,
+          total: total,
+          paymentType: Math.random() > 0.3 ? 'cash' : 'gcash',
+          timestamp: transDate.toISOString(),
+        });
+      }
+    }
+    
+    demoTransactions.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    
+    const groups: Record<string, Transaction[]> = {};
+    for (const t of demoTransactions) {
+      const mk = getYearMonth(t.timestamp);
+      if (!groups[mk]) groups[mk] = [];
+      groups[mk].push(t);
+    }
+    
+    for (const [mk, trans] of Object.entries(groups)) {
+      const key = getPartitionKey(mk);
+      await AsyncStorage.setItem(key, JSON.stringify(trans));
+      await registerMonthInIndex(mk);
+    }
+  }
+
+  // Seed demo Utang
+  const allUtang = await getUtangRecords();
+  if (allUtang.length === 0) {
+    const today = new Date();
+    const demoUtang: UtangRecord[] = [
+      {
+        id: 'demo-utang-1',
+        customerName: 'Aling Nena',
+        amount: 250,
+        isPaid: false,
+        note: 'Pay on Saturday',
+        items: [
+          {
+            productId: 'demo-coke',
+            productName: 'Coca-Cola 1.5L',
+            qty: 2,
+            priceAtSale: 75,
+            costPriceAtSale: 62,
+          },
+          {
+            productId: 'demo-luckyme',
+            productName: 'Lucky Me! Pancit Canton Extra Hot',
+            qty: 4,
+            priceAtSale: 22,
+            costPriceAtSale: 17.5,
+          }
+        ],
+        createdAt: new Date(today.getTime() - 2 * 24 * 3600000).toISOString(),
+      },
+      {
+        id: 'demo-utang-2',
+        customerName: 'Mang Jose',
+        amount: 85,
+        isPaid: false,
+        note: 'Beer credit',
+        items: [
+          {
+            productId: 'demo-sanmiguel',
+            productName: 'San Miguel Pale Pilsen Can',
+            qty: 1,
+            priceAtSale: 85,
+            costPriceAtSale: 70,
+          }
+        ],
+        createdAt: new Date(today.getTime() - 1 * 24 * 3600000).toISOString(),
+      }
+    ];
+    await AsyncStorage.setItem(UTANG_KEY, JSON.stringify(demoUtang));
+  }
+
+  // Seed demo Expenses
+  const allExpenses = await getExpenses();
+  if (allExpenses.length === 0) {
+    const today = new Date();
+    const demoExpenses: Expense[] = [
+      {
+        id: 'demo-exp-1',
+        description: 'Store Electricity bill',
+        amount: 350,
+        category: 'Utility',
+        timestamp: new Date(today.getTime() - 4 * 24 * 3600000).toISOString(),
+      },
+      {
+        id: 'demo-exp-2',
+        description: 'Tricycle Fare for grocery supplies',
+        amount: 50,
+        category: 'Transport',
+        timestamp: new Date(today.getTime() - 2 * 24 * 3600000).toISOString(),
+      }
+    ];
+    await AsyncStorage.setItem(EXPENSES_KEY, JSON.stringify(demoExpenses));
+  }
+}
