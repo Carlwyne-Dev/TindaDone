@@ -46,24 +46,41 @@ function App() {
       <div className="container">
 
         <section className="hero">
-          <motion.div variants={container} initial="hidden" animate="show">
-            <motion.h1 variants={item}>
-              Your Sari-Sari Store, <br />Fully Digital.
-            </motion.h1>
-            <motion.p variants={item}>
-              TindaDone is the ultimate offline-first Point of Sale & Inventory tracker designed specifically for micro-businesses. Throw away the messy notebooks.
-            </motion.p>
-            <motion.a 
-              href="#download" 
-              className="btn-primary"
-              variants={item}
-              whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(16, 185, 129, 0.6)' }}
-              whileTap={{ scale: 0.95 }}
+          <div className="hero-split">
+            <motion.div className="hero-text" variants={container} initial="hidden" animate="show">
+              <motion.h1 variants={item}>
+                Your Sari-Sari Store, <br />Fully Digital.
+              </motion.h1>
+              <motion.p variants={item}>
+                TindaDone is the ultimate offline-first Point of Sale & Inventory tracker designed specifically for micro-businesses. Throw away the messy notebooks.
+              </motion.p>
+              <motion.a 
+                href="#download" 
+                className="btn-primary"
+                variants={item}
+                whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(16, 185, 129, 0.6)' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Download size={22} />
+                Download APK Now
+              </motion.a>
+            </motion.div>
+            
+            <motion.div 
+              className="hero-image-container"
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <Download size={22} />
-              Download APK Now
-            </motion.a>
-          </motion.div>
+              <motion.img 
+                src="/hero_illustration.png" 
+                alt="TindaDone app illustration with friendly Tintin mascot pointing" 
+                className="hero-illustration"
+                animate={{ y: [0, -15, 0] }}
+                transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
+              />
+            </motion.div>
+          </div>
         </section>
 
         <section id="features" className="features">
