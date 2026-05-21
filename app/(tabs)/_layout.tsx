@@ -323,54 +323,6 @@ export default function TabLayout() {
       </View>
     </Modal>
 
-    {/* Seed Demo Confirmation Modal */}
-    <Modal
-      visible={showSeedConfirm}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={() => setShowSeedConfirm(false)}
-    >
-      <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[styles.modalContent, { height: 'auto', padding: 28, marginHorizontal: 24, borderRadius: 28, backgroundColor: Theme.colors.surface, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
-          {/* Icon */}
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary + '18', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 }}>
-            <Database size={30} color={Theme.colors.primary} />
-          </View>
-
-          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 22, color: Theme.colors.onSurface, textAlign: 'center', marginBottom: 10, letterSpacing: -0.5 }}>
-            Load Demo Data?
-          </Text>
-
-          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
-            This will add 8 sari-sari store products, 5 days of sale history, sample debts, and expenses.{`\n\n`}Your existing data will{' '}
-            <Text style={{ fontFamily: Theme.typography.bodyBold, color: Theme.colors.onSurface }}>not</Text>{' '}be deleted.
-          </Text>
-
-          {/* Buttons */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: Theme.colors.outline + '50', alignItems: 'center' }}
-              onPress={() => setShowSeedConfirm(false)}
-              disabled={isSeedLoading}
-            >
-              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: Theme.colors.onSurfaceVariant }}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: Theme.colors.primary, alignItems: 'center', opacity: isSeedLoading ? 0.7 : 1 }}
-              onPress={doSeed}
-              disabled={isSeedLoading}
-            >
-              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: '#FFF' }}>
-                {isSeedLoading ? 'Loading...' : 'Seed Data'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-
     <Modal
       visible={isSettingsOpen}
       animationType="slide"
@@ -541,6 +493,54 @@ export default function TabLayout() {
             <CheckCircle2 size={20} color="#FFF" />
             <Text style={styles.finalSaveText}>Apply Changes</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+
+    {/* Seed Demo Confirmation Modal */}
+    <Modal
+      visible={showSeedConfirm}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setShowSeedConfirm(false)}
+    >
+      <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center', zIndex: 99999 }]}>
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={[styles.modalContent, { height: 'auto', padding: 28, marginHorizontal: 24, borderRadius: 28, backgroundColor: Theme.colors.surface, elevation: 999, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
+          {/* Icon */}
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary + '18', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 }}>
+            <Database size={30} color={Theme.colors.primary} />
+          </View>
+
+          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 22, color: Theme.colors.onSurface, textAlign: 'center', marginBottom: 10, letterSpacing: -0.5 }}>
+            Load Demo Data?
+          </Text>
+
+          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
+            This will add 8 sari-sari store products, 5 days of sale history, sample debts, and expenses.{`\n\n`}Your existing data will{' '}
+            <Text style={{ fontFamily: Theme.typography.bodyBold, color: Theme.colors.onSurface }}>not</Text>{' '}be deleted.
+          </Text>
+
+          {/* Buttons */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: Theme.colors.outline + '50', alignItems: 'center' }}
+              onPress={() => setShowSeedConfirm(false)}
+              disabled={isSeedLoading}
+            >
+              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: Theme.colors.onSurfaceVariant }}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: Theme.colors.primary, alignItems: 'center', opacity: isSeedLoading ? 0.7 : 1 }}
+              onPress={doSeed}
+              disabled={isSeedLoading}
+            >
+              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: '#FFF' }}>
+                {isSeedLoading ? 'Loading...' : 'Seed Data'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
