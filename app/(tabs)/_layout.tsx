@@ -469,6 +469,7 @@ export default function TabLayout() {
         entering={FadeInDown.duration(300)} 
         exiting={FadeOutDown.duration(200)} 
         style={styles.toastContainer}
+        pointerEvents="none"
       >
         <View style={styles.toastContent}>
           <CheckCircle2 size={24} color="#FFF" />
@@ -488,7 +489,6 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 9999,
     alignItems: 'center',
-    pointerEvents: 'none',
   },
   toastContent: {
     flexDirection: 'row',
