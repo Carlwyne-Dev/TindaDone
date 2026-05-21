@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
@@ -581,7 +580,7 @@ export default function SellScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#059669', '#0d9488']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.boutiqueHeader}>
+      <View style={styles.boutiqueHeader}>
         <View>
           <Text style={styles.boutiqueTitle}>Terminal</Text>
           <Text style={styles.boutiqueSubtitle}>Point of Sale</Text>
@@ -590,9 +589,9 @@ export default function SellScreen() {
           style={styles.settingsHeaderBtn} 
           onPress={() => setIsSettingsOpen(true)}
         >
-          <Settings size={22} color="#FFF" />
+          <Settings size={22} color={Theme.colors.primary} />
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
       {/* Trial Countdown Banner */}
       {!activated && trial?.active && (
         <View style={styles.trialBanner}>
@@ -1160,33 +1159,21 @@ export default function SellScreen() {
 const styles = StyleSheet.create({
   boutiqueHeader: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 28,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    paddingTop: 12,
+    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: -10, // Pulls the content up slightly to overlap
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
-  },
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    elevation: 10,
   },
   settingsHeaderBtn: {
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 14,
+    padding: 8,
+    backgroundColor: Theme.colors.surfaceContainerHigh,
+    borderRadius: 16,
   },
   boutiqueTitle: {
     fontFamily: Theme.typography.headlineBlack,
     fontSize: 34,
-    color: "#FFFFFF",
+    color: Theme.colors.onSurface,
     letterSpacing: -1.5,
   },
   boutiqueSubtitle: {
@@ -2233,7 +2220,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   utangPromptSub: {
-    fontFamily: Theme.typography.bodyBold,
+    fontFamily: Theme.typography.bodyMedium,
     fontSize: 14,
     color: Theme.colors.onSurfaceVariant,
     textAlign: 'center',
