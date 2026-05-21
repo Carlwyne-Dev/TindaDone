@@ -213,7 +213,7 @@ export default function TabLayout() {
             <Settings size={24} color={Theme.colors.primary} />
           </TouchableOpacity>
         ),
-        animation: 'fade',
+        animation: 'shift',
         sceneStyle: { backgroundColor: Theme.colors.background },
       }}
     >
