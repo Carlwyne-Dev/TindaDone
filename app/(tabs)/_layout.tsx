@@ -99,6 +99,8 @@ export default function TabLayout() {
   const [newCategory, setNewCategory] = React.useState('');
   const [showToast, setShowToast] = React.useState(false);
   const [trialExpired, setTrialExpired] = React.useState(false);
+  const [showSeedConfirm, setShowSeedConfirm] = React.useState(false);
+  const [isSeedLoading, setIsSeedLoading] = React.useState(false);
 
   // Security Guard: Ensure user has valid trial or activation
   React.useEffect(() => {
@@ -127,40 +129,21 @@ export default function TabLayout() {
     }, 2500);
   };
 
-  const handleSeedDemo = async () => {
-    const doSeed = async () => {
-      try {
-        await seedDemoItems();
-        setIsSettingsOpen(false);
-        if (Platform.OS === 'web') {
-          window.alert('Demo items and sales history loaded successfully!');
-        } else {
-          Alert.alert('Success', 'Demo items and sales history loaded successfully!');
-        }
-      } catch (e) {
-        console.error(e);
-        if (Platform.OS === 'web') {
-          window.alert('Failed to seed demo data.');
-        } else {
-          Alert.alert('Error', 'Failed to seed demo data.');
-        }
-      }
-    };
+  const handleSeedDemo = () => setShowSeedConfirm(true);
 
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm(
-        'This will populate your inventory with 8 realistic products, load 5 days of sales history, mock debts, and expenses. Existing items will NOT be deleted. Proceed?'
-      );
-      if (confirmed) await doSeed();
-    } else {
-      Alert.alert(
-        'Seed Demo Data',
-        'This will populate your inventory with 8 realistic products, load 5 days of sales history, mock debts, and expenses. Existing items will not be deleted. Proceed?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Seed Data', style: 'default', onPress: doSeed }
-        ]
-      );
+  const doSeed = async () => {
+    setIsSeedLoading(true);
+    try {
+      await seedDemoItems();
+      setIsSeedLoading(false);
+      setShowSeedConfirm(false);
+      setIsSettingsOpen(false);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2500);
+    } catch (e) {
+      console.error(e);
+      setIsSeedLoading(false);
+      setShowSeedConfirm(false);
     }
   };
 
@@ -336,6 +319,54 @@ export default function TabLayout() {
           >
             <Text style={styles.finalSaveText}>Unlock Permanent Access</Text>
           </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+
+    {/* Seed Demo Confirmation Modal */}
+    <Modal
+      visible={showSeedConfirm}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={() => setShowSeedConfirm(false)}
+    >
+      <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        <View style={[styles.modalContent, { height: 'auto', padding: 28, marginHorizontal: 24, borderRadius: 28, backgroundColor: Theme.colors.surface, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
+          {/* Icon */}
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary + '18', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 }}>
+            <Database size={30} color={Theme.colors.primary} />
+          </View>
+
+          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 22, color: Theme.colors.onSurface, textAlign: 'center', marginBottom: 10, letterSpacing: -0.5 }}>
+            Load Demo Data?
+          </Text>
+
+          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
+            This will add 8 sari-sari store products, 5 days of sale history, sample debts, and expenses.{`\n\n`}Your existing data will{' '}
+            <Text style={{ fontFamily: Theme.typography.bodyBold, color: Theme.colors.onSurface }}>not</Text>{' '}be deleted.
+          </Text>
+
+          {/* Buttons */}
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: Theme.colors.outline + '50', alignItems: 'center' }}
+              onPress={() => setShowSeedConfirm(false)}
+              disabled={isSeedLoading}
+            >
+              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: Theme.colors.onSurfaceVariant }}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: Theme.colors.primary, alignItems: 'center', opacity: isSeedLoading ? 0.7 : 1 }}
+              onPress={doSeed}
+              disabled={isSeedLoading}
+            >
+              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: '#FFF' }}>
+                {isSeedLoading ? 'Loading...' : 'Seed Data'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
