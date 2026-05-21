@@ -137,7 +137,12 @@ function RootLayoutNav() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ contentStyle: { backgroundColor: Theme.colors.background }, headerShown: false }}>
+        <Stack screenOptions={{ 
+          contentStyle: { backgroundColor: Theme.colors.background }, 
+          headerShown: false,
+          animation: 'slide_from_right',
+          animationDuration: 220,
+        }}>
           <Stack.Screen name="activate" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="sales-history" options={{ headerShown: false }} />
