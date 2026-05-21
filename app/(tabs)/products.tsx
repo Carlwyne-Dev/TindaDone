@@ -468,7 +468,7 @@ export default function ProductsScreen() {
           style={styles.settingsHeaderBtn} 
           onPress={() => setIsSettingsOpen(true)}
         >
-          <Settings size={22} color={Theme.colors.primary} />
+          <Settings size={22} color="#FFF" />
         </TouchableOpacity>
       </View>
 
@@ -932,20 +932,29 @@ const styles = StyleSheet.create({
   boutiqueHeader: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 8,
+    paddingBottom: 24,
+    backgroundColor: Theme.colors.primary,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: Theme.colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
   },
   settingsHeaderBtn: {
-    padding: 8,
-    backgroundColor: Theme.colors.surfaceContainerHigh,
-    borderRadius: 12,
+    padding: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 14,
   },
   boutiqueTitle: {
     fontFamily: Theme.typography.headlineBlack,
     fontSize: 34,
-    color: Theme.colors.onSurface,
+    color: "#FFFFFF",
     letterSpacing: -1.5,
   },
   boutiqueSubtitle: {

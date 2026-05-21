@@ -18,6 +18,7 @@ import { Theme } from '../../constants/Theme';
 import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES, seedDemoItems } from '../../lib/storage';
 import { BusinessSettings } from '../../lib/types';
 import { useSettings } from '../../context/SettingsContext';
+import { useTintin } from '../../context/TintinContext';
 import { BlurView } from 'expo-blur';
 
 const TAB_BAR_MARGIN = 20;
@@ -101,6 +102,26 @@ export default function TabLayout() {
   const [trialExpired, setTrialExpired] = React.useState(false);
   const [showSeedConfirm, setShowSeedConfirm] = React.useState(false);
   const [isSeedLoading, setIsSeedLoading] = React.useState(false);
+  
+  const { say } = useTintin();
+  const hasGreeted = React.useRef(false);
+
+  React.useEffect(() => {
+    // Ensure we only greet once per session, and wait until settings load
+    if (hasGreeted.current) return;
+    
+    const hour = new Date().getHours();
+    let timeGreeting = 'Good evening';
+    if (hour < 12) timeGreeting = 'Good morning';
+    else if (hour < 18) timeGreeting = 'Good afternoon';
+    
+    const ownerName = businessSettings?.storeName ? ` ${businessSettings.storeName}` : '';
+    
+    hasGreeted.current = true;
+    setTimeout(() => {
+      say(`${timeGreeting}${ownerName}! Let's make some sales!`, 'success');
+    }, 1000);
+  }, [businessSettings.storeName]); // Run when storeName is available/loaded
 
   // Security Guard: Ensure user has valid trial or activation
   React.useEffect(() => {
