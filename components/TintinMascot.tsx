@@ -26,7 +26,9 @@ export const TintinMascot = () => {
   useEffect(() => {
     if (message) {
       // Trigger arrival
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
       
       // Peek in - Smooth timing instead of bouncy spring
       peekX.value = withTiming(0, { duration: 400 });

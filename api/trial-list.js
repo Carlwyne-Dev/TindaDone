@@ -48,7 +48,9 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { password } = req.query;
-  if (password !== (process.env.ADMIN_PASSWORD || 'xyuuki18')) return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
+  const adminPass = process.env.ADMIN_PASSWORD;
+  if (!adminPass) return res.status(500).json({ error: 'Server misconfiguration: ADMIN_PASSWORD not set.' });
+  if (password !== adminPass) return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
 
   const env = getKVEnv();
   try {

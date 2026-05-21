@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
   const { licenseKey, deviceId } = req.body;
   const env = getKVEnv();
-  if (!env.url || !env.token) return res.status(200).json({ success: true });
+  if (!env.url || !env.token) return res.status(503).json({ success: false, error: 'Service unavailable: database not configured.' });
 
   try {
     const getData = await kvRequest(["GET", "td_key_history"], env);

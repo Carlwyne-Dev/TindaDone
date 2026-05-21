@@ -96,6 +96,7 @@ export default function TabLayout() {
   const [tempSettings, setTempSettings] = React.useState<BusinessSettings>(businessSettings);
   const [newCategory, setNewCategory] = React.useState('');
   const [showToast, setShowToast] = React.useState(false);
+  const [trialExpired, setTrialExpired] = React.useState(false);
 
   // Security Guard: Ensure user has valid trial or activation
   React.useEffect(() => {
@@ -104,7 +105,7 @@ export default function TabLayout() {
       if (activated) return;
       const trial = await getTrialStatus();
       if (!trial.active) {
-        router.replace('/activate');
+        setTrialExpired(true);
       }
     };
     checkAuth();
@@ -262,6 +263,43 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+
+    <Modal
+      visible={trialExpired}
+      animationType="fade"
+      transparent={true}
+      // No onRequestClose so android hardware back button doesn't bypass it!
+    >
+      <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
+        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        
+        <View style={[styles.modalContent, { height: 'auto', padding: 24, marginHorizontal: 20, borderRadius: 24, backgroundColor: Theme.colors.surface, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.errorContainer, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 16 }}>
+            <ShoppingBag size={32} color={Theme.colors.error} />
+          </View>
+          
+          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 24, color: Theme.colors.onSurface, textAlign: 'center', marginBottom: 12 }}>
+            Your 7-Day Free Trial has ended.
+          </Text>
+          
+          <Text style={{ fontFamily: Theme.typography.body, fontSize: 15, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+            For the last 7 days, you've built your inventory and easily tracked your sales. Don't lose this momentum—why go back to messy notebooks?{'\n\n'}
+            Activate TindaDone permanently to keep all your records safe and your business running stress-free.
+          </Text>
+          
+          <TouchableOpacity 
+            style={[styles.finalSaveBtn, { width: '100%' }]}
+            onPress={() => {
+              setTrialExpired(false);
+              router.replace('/activate');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.finalSaveText}>Unlock Permanent Access</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
 
     <Modal
       visible={isSettingsOpen}

@@ -61,7 +61,8 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const env = getKVEnv();
-  const adminPass = process.env.ADMIN_PASSWORD || 'xyuuki18';
+  const adminPass = process.env.ADMIN_PASSWORD;
+  if (!adminPass) return res.status(500).json({ error: 'Server misconfiguration: ADMIN_PASSWORD not set.' });
 
   if (req.method === 'GET') {
     const { password } = req.query;

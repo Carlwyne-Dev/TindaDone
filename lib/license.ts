@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 const ACTIVATION_STORAGE_KEY = '@tindadone/activated';
 const DEVICE_ID_STORAGE_KEY = '@tindadone/device_id';
 const TRIAL_START_KEY = '@tindadone/trial_start';
-const TRIAL_DAYS = 3;
+const TRIAL_DAYS = 7;
 
 // 🔗 Vercel Admin API URL
 // CRITICAL: Update this to your deployed Vercel URL
