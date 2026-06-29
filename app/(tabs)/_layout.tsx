@@ -177,21 +177,27 @@ export default function TabLayout() {
     }
   };
 
-  const handleDemoToggle = async (val: boolean) => {
+  const handleDemoToggle = (val: boolean) => {
+    // Optimistically update the switch UI immediately for smooth animation
+    setIsDemoActive(val);
     setIsSeedLoading(true);
-    try {
-      if (val) {
-        await seedDemoItems();
-        setIsDemoActive(true);
-      } else {
-        await clearDemoItems();
-        setIsDemoActive(false);
+
+    // Defer heavy storage work until after the switch finishes animating
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        if (val) {
+          await seedDemoItems();
+        } else {
+          await clearDemoItems();
+        }
+      } catch (e) {
+        console.error(e);
+        // Revert on failure
+        setIsDemoActive(!val);
+      } finally {
+        setIsSeedLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSeedLoading(false);
-    }
+    });
   };
 
   const toggleBeep = (val: boolean) => setTempSettings(prev => ({ ...prev, scannerBeep: val }));
