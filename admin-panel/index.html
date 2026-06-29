@@ -568,6 +568,11 @@
     const userName = document.getElementById('new-user').value.trim();
     if (!deviceCode) return showToast('Enter the Customer Device ID', true);
 
+    // Prevent duplicate device IDs
+    if (allKeys.some(k => k.code === deviceCode)) {
+      return showToast('This Device ID is already registered!', true);
+    }
+
     const generatedKey = generateActivationKey(deviceCode);
 
     const entry = {

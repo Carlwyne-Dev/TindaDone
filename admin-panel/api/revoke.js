@@ -64,7 +64,11 @@ module.exports = async (req, res) => {
   const body = await parseBody(req);
   const { password, deviceId, revoke } = body;
 
-  if (password !== adminPass) return res.status(401).json({ error: 'Auth Failed' });
+  if (password !== adminPass) {
+    // 🛡️ Security: Add intentional delay to prevent brute-force attacks
+    await new Promise(r => setTimeout(r, 2000));
+    return res.status(401).json({ error: 'Auth Failed' });
+  }
 
   try {
     const getData = await kvRequest(["GET", "td_key_history"], env);

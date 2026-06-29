@@ -66,7 +66,11 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     const { password } = req.query;
-    if (password !== adminPass) return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
+    if (password !== adminPass) {
+      // 🛡️ Security: Add intentional delay to prevent brute-force attacks
+      await new Promise(r => setTimeout(r, 2000));
+      return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
+    }
     try {
       const data = await kvRequest(["GET", "td_key_history"], env);
       let history = [];
@@ -85,7 +89,10 @@ module.exports = async (req, res) => {
   if (req.method === 'POST' || req.method === 'DELETE') {
     const body = await parseBody(req);
     const { password, entry, ts, fullHistory } = body;
-    if (password !== adminPass) return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
+    if (password !== adminPass) {
+      await new Promise(r => setTimeout(r, 2000));
+      return res.status(401).json({ error: 'Auth Failed: Invalid Password' });
+    }
 
     try {
       let history = [];
