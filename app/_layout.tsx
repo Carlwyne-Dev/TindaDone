@@ -57,10 +57,18 @@ SplashScreen.preventAutoHideAsync();
 // Custom animated loading screen
 function AppSplash() {
   const rotation = useSharedValue(0);
+  const rotation2 = useSharedValue(0);
 
   useEffect(() => {
+    // Main spinner — clockwise
     rotation.value = withRepeat(
-      withTiming(360, { duration: 1200, easing: Easing.linear }),
+      withTiming(360, { duration: 1000, easing: Easing.linear }),
+      -1,
+      false
+    );
+    // Background track — slightly slower, opposite direction
+    rotation2.value = withRepeat(
+      withTiming(-360, { duration: 1800, easing: Easing.linear }),
       -1,
       false
     );
@@ -70,24 +78,22 @@ function AppSplash() {
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const RING = 160;
+  const spinStyle2 = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation2.value}deg` }],
+  }));
 
   return (
     <View style={splashStyles.container}>
       <Animated.View entering={FadeIn.duration(400)} style={splashStyles.logoWrap}>
-        {/* Spinning dashed ring */}
+        {/* Slow faint outer track */}
+        <Animated.View style={[splashStyles.outerRing, spinStyle2]} />
+        {/* Fast solid loading arc encircling the image */}
         <Animated.View style={[splashStyles.ring, spinStyle]} />
-        {/* Mascot */}
+        {/* Mascot image in the center */}
         <Image
           source={require('../assets/loading.png')}
           style={splashStyles.logo}
           resizeMode="contain"
-        />
-        {/* ActivityIndicator below image */}
-        <ActivityIndicator
-          size={28}
-          color={Theme.colors.primary}
-          style={{ position: 'absolute', bottom: -36 }}
         />
       </Animated.View>
     </View>
@@ -109,12 +115,21 @@ const splashStyles = StyleSheet.create({
   },
   ring: {
     position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 3,
+    width: 152,
+    height: 152,
+    borderRadius: 76,
+    borderWidth: 4,
     borderColor: Theme.colors.primary,
-    borderStyle: 'dashed',
+    borderTopColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  outerRing: {
+    position: 'absolute',
+    width: 164,
+    height: 164,
+    borderRadius: 82,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary + '33',
     borderTopColor: 'transparent',
   },
   logo: {
