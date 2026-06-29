@@ -654,6 +654,49 @@ export async function exportData(): Promise<void> {
   }
 }
 
+export async function importData(): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Let user pick a JSON file
+    const result = await (await import('expo-document-picker')).getDocumentAsync({
+      type: 'application/json',
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled || !result.assets?.[0]) {
+      return { success: false, error: 'Cancelled' };
+    }
+
+    const uri = result.assets[0].uri;
+    const raw = await FileSystem.readAsStringAsync(uri);
+    const backup = JSON.parse(raw);
+
+    // Validate it looks like a TindaDone backup
+    if (typeof backup !== 'object' || backup === null) {
+      return { success: false, error: 'Invalid backup file.' };
+    }
+
+    // Restore each key that exists in the backup
+    const validKeys = [PRODUCTS_KEY, TRANSACTIONS_KEY, UTANG_KEY, RESTOCKS_KEY, SETTINGS_KEY];
+    const pairs: [string, string][] = [];
+
+    for (const key of validKeys) {
+      if (backup[key] !== undefined && backup[key] !== null) {
+        pairs.push([key, typeof backup[key] === 'string' ? backup[key] : JSON.stringify(backup[key])]);
+      }
+    }
+
+    if (pairs.length === 0) {
+      return { success: false, error: 'No recognizable data found in file.' };
+    }
+
+    await AsyncStorage.multiSet(pairs);
+    return { success: true };
+  } catch (e: any) {
+    console.error('Error importing data:', e);
+    return { success: false, error: e?.message || 'Unknown error' };
+  }
+}
+
 export async function seedDemoItems(): Promise<void> {
   const demoProducts: Product[] = [
     {

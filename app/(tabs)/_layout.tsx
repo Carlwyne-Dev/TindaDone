@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Dimensions, Text, Modal, TextInput, Switch, Alert, Platform, InteractionManager, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
-import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, User, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus } from 'lucide-react-native';
+import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, User, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus, Upload } from 'lucide-react-native';
 import { isActivated, getTrialStatus } from '../../lib/license';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { 
@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useColorScheme } from '../../components/useColorScheme';
 import { Theme } from '../../constants/Theme';
-import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES, seedDemoItems, clearDemoItems, getProducts } from '../../lib/storage';
+import { getBusinessSettings, saveBusinessSettings, exportData, importData, DEFAULT_CATEGORIES, seedDemoItems, clearDemoItems, getProducts } from '../../lib/storage';
 import { BusinessSettings } from '../../lib/types';
 import { useSettings } from '../../context/SettingsContext';
 import { useTintin } from '../../context/TintinContext';
@@ -518,6 +518,24 @@ export default function TabLayout() {
                 <View>
                   <Text style={styles.backupTitle}>Full System Backup</Text>
                   <Text style={styles.backupSub}>Export products & ledger (JSON)</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.backupCard, { marginTop: 10 }]} onPress={async () => {
+                const result = await importData();
+                if (result.success) {
+                  setIsSettingsOpen(false);
+                  Alert.alert('Restored!', 'Backup imported successfully. Restart the app to see all changes.');
+                } else if (result.error !== 'Cancelled') {
+                  Alert.alert('Import Failed', result.error || 'Unknown error');
+                }
+              }}>
+                <View style={[styles.backupIcon, { backgroundColor: Theme.colors.secondaryContainer }]}>
+                  <Upload size={20} color={Theme.colors.secondary} />
+                </View>
+                <View>
+                  <Text style={styles.backupTitle}>Restore from Backup</Text>
+                  <Text style={styles.backupSub}>Import a .json backup file</Text>
                 </View>
               </TouchableOpacity>
               <View style={[styles.featureCard, { marginTop: 12 }]}>
