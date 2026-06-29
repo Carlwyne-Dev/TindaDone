@@ -369,12 +369,8 @@
         <h3>➕ Add New License Key</h3>
         <div class="form-row">
           <div class="form-group">
-            <label>License Key</label>
-            <input id="new-key" type="text" placeholder="TD-XXXX-XXXX-XXXX" />
-          </div>
-          <div class="form-group">
-            <label>Note (optional)</label>
-            <input id="new-note" type="text" placeholder="e.g. Customer name" />
+            <label>User Name</label>
+            <input id="new-user" type="text" placeholder="e.g. John Doe" />
           </div>
           <button class="add-btn" onclick="addKey()">Add Key</button>
         </div>
@@ -392,7 +388,7 @@
                 <th>Status</th>
                 <th>Device ID</th>
                 <th>Activated At</th>
-                <th>Note</th>
+                <th>User Name</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -542,15 +538,27 @@
     renderKeys(filtered);
   }
 
+  function generateKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let res = 'TD-';
+    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    res += '-';
+    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    res += '-';
+    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+    return res;
+  }
+
   async function addKey() {
-    const keyVal = document.getElementById('new-key').value.trim().toUpperCase();
-    const note = document.getElementById('new-note').value.trim();
-    if (!keyVal) return showToast('Enter a license key', true);
+    const userName = document.getElementById('new-user').value.trim();
+    if (!userName) return showToast('Enter a User Name', true);
+    
+    const keyVal = generateKey();
 
     const entry = {
       key: keyVal,
       code: keyVal,
-      note,
+      note: userName,
       ts: Date.now(),
       activated: false,
       revoked: false,
@@ -563,8 +571,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: PASSWORD, entry }),
       });
-      document.getElementById('new-key').value = '';
-      document.getElementById('new-note').value = '';
+      document.getElementById('new-user').value = '';
       showToast('Key added successfully!');
       loadAll();
     } catch (e) { showToast('Failed: ' + e.message, true); }
