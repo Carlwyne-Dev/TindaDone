@@ -5,7 +5,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import 'react-native-reanimated';
 import { isActivated, getTrialStatus } from '../lib/license';
 import { 
@@ -118,6 +118,7 @@ const splashStyles = StyleSheet.create({
 });
 
 export default function RootLayout() {
+  const appStartTime = useRef(Date.now()).current;
   const [loaded, error] = useFonts({
     'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
     'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
@@ -136,7 +137,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      // ⏱️ Minimum splash duration: 2.5 seconds for a premium feel
+      const MIN_SPLASH_MS = 2500;
+      const elapsed = Date.now() - appStartTime;
+      const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+
+      setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, remaining);
+
       syncActivationStatus();
       Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
