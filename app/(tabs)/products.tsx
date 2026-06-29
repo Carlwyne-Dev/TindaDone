@@ -700,7 +700,7 @@ export default function ProductsScreen() {
               )}
 
               {!isBulkMode && (
-                <View style={[styles.inputRow, { marginBottom: 12 }]}>
+                <View style={[styles.inputRow, { marginBottom: 4 }]}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.inputLabel}>INITIAL STOCK (Pieces)</Text>
                     <TextInput 
@@ -711,6 +711,9 @@ export default function ProductsScreen() {
                       value={initialPieces} 
                       onChangeText={(t) => setInitialPieces(t.replace(/[^0-9]/g, ''))} 
                     />
+                    <Text style={{ fontSize: 11, color: Theme.colors.outline, marginTop: 6, marginLeft: 4 }}>
+                      💡 How many individual pieces you currently have in stock (e.g. 10 bottles, 5 sachets)
+                    </Text>
                   </View>
                 </View>
               )}

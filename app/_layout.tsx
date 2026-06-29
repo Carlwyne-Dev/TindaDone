@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { View, Image, Dimensions, StyleSheet } from 'react-native';
+import { View, Image, Dimensions, StyleSheet, ActivityIndicator } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -82,6 +82,12 @@ function AppSplash() {
           source={require('../assets/loading.png')}
           style={splashStyles.logo}
           resizeMode="contain"
+        />
+        {/* ActivityIndicator below image */}
+        <ActivityIndicator
+          size={28}
+          color={Theme.colors.primary}
+          style={{ position: 'absolute', bottom: -36 }}
         />
       </Animated.View>
     </View>
