@@ -103,7 +103,7 @@ function AppSplash() {
 const splashStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Theme.colors.background,
+    backgroundColor: '#F4F9F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -118,18 +118,18 @@ const splashStyles = StyleSheet.create({
     width: 152,
     height: 152,
     borderRadius: 76,
-    borderWidth: 4,
-    borderColor: Theme.colors.primary,
+    borderWidth: 5,
+    borderColor: '#0a643b',
     borderTopColor: 'transparent',
     borderRightColor: 'transparent',
   },
   outerRing: {
     position: 'absolute',
-    width: 164,
-    height: 164,
-    borderRadius: 82,
+    width: 166,
+    height: 166,
+    borderRadius: 83,
     borderWidth: 2,
-    borderColor: Theme.colors.primary + '33',
+    borderColor: '#0a643b44',
     borderTopColor: 'transparent',
   },
   logo: {
