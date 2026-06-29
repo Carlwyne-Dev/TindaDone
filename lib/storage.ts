@@ -109,7 +109,7 @@ export async function getProducts(): Promise<Product[]> {
       return await seedPresetProducts();
     }
     const items: Product[] = JSON.parse(raw);
-    return items.filter(p => !p.id.startsWith('preset-'));
+    return items; // Show all products including preset ones
   } catch (e) {
     console.error('Error fetching products:', e);
     return [];

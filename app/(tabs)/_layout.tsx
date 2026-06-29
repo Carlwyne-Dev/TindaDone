@@ -341,7 +341,7 @@ export default function TabLayout() {
       <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center' }]}>
         <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
         
-        <View style={[styles.modalContent, { height: 'auto', padding: 24, marginHorizontal: 20, borderRadius: 24, backgroundColor: Theme.colors.surface, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
+        <View style={[styles.modalContent, { height: 'auto', padding: 28, paddingHorizontal: 28, marginHorizontal: 20, borderRadius: 24, backgroundColor: Theme.colors.surface, elevation: 20, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.errorContainer, justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 16 }}>
             <ShoppingBag size={32} color={Theme.colors.error} />
           </View>
@@ -363,7 +363,7 @@ export default function TabLayout() {
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.finalSaveText}>Unlock Permanent Access</Text>
+            <Text style={[styles.finalSaveText, { fontSize: 16 }]}>Unlock Permanent Access</Text>
           </TouchableOpacity>
         </View>
       </View>

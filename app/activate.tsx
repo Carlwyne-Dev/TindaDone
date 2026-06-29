@@ -24,7 +24,8 @@ import {
 } from '../lib/license';
 import { getBusinessSettings, saveBusinessSettings } from '../lib/storage';
 import { Theme } from '../constants/Theme';
-import { CheckCircle2, Lock, Play, Clock, AlertTriangle } from 'lucide-react-native';
+import { CheckCircle2, Lock, Play, Clock, AlertTriangle, Copy } from 'lucide-react-native';
+import * as Clipboard from 'expo-clipboard';
 
 export default function ActivateScreen() {
   const router = useRouter();
@@ -114,6 +115,11 @@ export default function ActivateScreen() {
     } catch (e) {
       console.error('Failed to save owner name to settings:', e);
     }
+  };
+
+  const copyDeviceCode = async () => {
+    await Clipboard.setStringAsync(deviceCode);
+    showNotification('Device ID copied to clipboard!');
   };
 
   const handleActivate = async () => {
@@ -232,8 +238,13 @@ export default function ActivateScreen() {
 
         <View style={styles.certCard}>
           <Text style={styles.certLabel}>DEVICE CERTIFICATE</Text>
-          <Text style={styles.certValue}>{deviceCode}</Text>
-          <Text style={styles.certHint}>Provide this certificate to your official seller</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
+            <Text style={[styles.certValue, { marginTop: 0 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{deviceCode}</Text>
+            <TouchableOpacity onPress={copyDeviceCode} style={{ marginLeft: 10, padding: 8, backgroundColor: Theme.colors.surfaceVariant, borderRadius: 8 }}>
+              <Copy size={20} color={Theme.colors.onSurfaceVariant} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.certHint}>Provide this certificate to your official seller to buy the app.</Text>
         </View>
 
         <View style={styles.inputSuite}>
@@ -266,10 +277,14 @@ export default function ActivateScreen() {
           ) : (
             <>
               <CheckCircle2 size={20} color="#FFF" strokeWidth={2.5} />
-              <Text style={styles.primaryBtnText}>Activate Full Suite</Text>
+              <Text style={styles.primaryBtnText}>Activate Full Version</Text>
             </>
           )}
         </TouchableOpacity>
+
+        <Text style={[styles.subtitle, { marginTop: 30, marginBottom: 15, color: Theme.colors.outline }]}>
+          Not ready to buy? Scroll down to start a free trial!
+        </Text>
 
         <View style={styles.divider} />
 
@@ -457,10 +472,11 @@ const styles = StyleSheet.create({
   },
   certValue: {
     fontFamily: Theme.typography.headlineBlack,
-    fontSize: 32,
+    fontSize: 26,
     color: Theme.colors.onSurface,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     marginBottom: 8,
+    flexShrink: 1,
   },
   certHint: {
     fontFamily: Theme.typography.bodyMedium,
