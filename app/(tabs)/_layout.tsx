@@ -105,24 +105,22 @@ export default function TabLayout() {
   const [isDemoActive, setIsDemoActive] = React.useState(false);
   
   const { say } = useTintin();
-  const hasGreeted = React.useRef(false);
 
   React.useEffect(() => {
-    // Ensure we only greet once per session, and wait until settings load
-    if (hasGreeted.current) return;
-    
-    const hour = new Date().getHours();
-    let timeGreeting = 'Good evening';
-    if (hour < 12) timeGreeting = 'Good morning';
-    else if (hour < 18) timeGreeting = 'Good afternoon';
-    
-    const ownerName = businessSettings?.ownerName ? ` ${businessSettings.ownerName}` : '';
-    
-    hasGreeted.current = true;
-    setTimeout(() => {
+    // Delay greeting so settings have time to load from AsyncStorage
+    // then greet exactly once on mount — no dependency on ownerName changes
+    const timer = setTimeout(() => {
+      const hour = new Date().getHours();
+      let timeGreeting = 'Good evening';
+      if (hour < 12) timeGreeting = 'Good morning';
+      else if (hour < 18) timeGreeting = 'Good afternoon';
+
+      const ownerName = businessSettings?.ownerName ? ` ${businessSettings.ownerName}` : '';
       say(`${timeGreeting}${ownerName}! Let's make some sales!`, 'success');
-    }, 1000);
-  }, [businessSettings.ownerName]); // Run when ownerName is available/loaded
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []); // ← empty deps: fires exactly once on mount
 
   // Security Guard: Ensure user has valid trial or activation
   React.useEffect(() => {
