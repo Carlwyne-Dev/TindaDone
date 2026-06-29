@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   View, 
   Text, 
@@ -382,11 +383,20 @@ export default function SellScreen() {
   };
 
   useEffect(() => {
-    const checkEOD = () => {
+    const checkEOD = async () => {
       const hours = new Date().getHours();
-      if (hours >= 18) { // 6 PM
+      if (hours < 18) return; // Only after 6 PM
+
+      // Only fire once per calendar day
+      const today = new Date().toDateString();
+      const lastFired = await AsyncStorage.getItem('@tindadone/eod_notif_date');
+      if (lastFired === today) return;
+
+      await AsyncStorage.setItem('@tindadone/eod_notif_date', today);
+      // Small delay so it doesn't fire during splash/loading
+      setTimeout(() => {
         tintin.say("It's been a busy day! Ready to generate your Daily Performance report?", 'info');
-      }
+      }, 3000);
     };
     checkEOD();
   }, []);

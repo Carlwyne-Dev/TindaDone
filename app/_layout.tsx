@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { View, Image, Dimensions, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Image, StyleSheet, ActivityIndicator, Animated as RNAnimated } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -15,14 +15,6 @@ import {
 } from 'expo-av';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  FadeIn,
-} from 'react-native-reanimated';
 
 import {
   PlusJakartaSans_400Regular,
@@ -54,48 +46,44 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
-// Custom animated loading screen
+// Custom animated loading screen using RN Animated (reliable on Android)
 function AppSplash() {
-  const rotation = useSharedValue(0);
-  const rotation2 = useSharedValue(0);
+  const spin = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
-    // Main spinner — clockwise
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 1000, easing: Easing.linear }),
-      -1,
-      false
-    );
-    // Background track — slightly slower, opposite direction
-    rotation2.value = withRepeat(
-      withTiming(-360, { duration: 1800, easing: Easing.linear }),
-      -1,
-      false
-    );
+    RNAnimated.loop(
+      RNAnimated.timing(spin, {
+        toValue: 1,
+        duration: 1000,
+        easing: (t) => t, // linear
+        useNativeDriver: true,
+      })
+    ).start();
   }, []);
 
-  const spinStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  const spinStyle2 = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation2.value}deg` }],
-  }));
+  const rotate = spin.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <View style={splashStyles.container}>
-      <Animated.View entering={FadeIn.duration(400)} style={splashStyles.logoWrap}>
-        {/* Slow faint outer track */}
-        <Animated.View style={[splashStyles.outerRing, spinStyle2]} />
-        {/* Fast solid loading arc encircling the image */}
-        <Animated.View style={[splashStyles.ring, spinStyle]} />
+      <View style={splashStyles.logoWrap}>
+        {/* Spinning green arc around the image */}
+        <RNAnimated.View style={[splashStyles.ring, { transform: [{ rotate }] }]} />
         {/* Mascot image in the center */}
         <Image
           source={require('../assets/loading.png')}
           style={splashStyles.logo}
           resizeMode="contain"
         />
-      </Animated.View>
+      </View>
+      {/* Small dots loader below */}
+      <ActivityIndicator
+        size="small"
+        color="#0a643b"
+        style={{ marginTop: 24 }}
+      />
     </View>
   );
 }
@@ -112,7 +100,6 @@ const splashStyles = StyleSheet.create({
     height: 200,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'visible',
   },
   ring: {
     position: 'absolute',
@@ -124,20 +111,12 @@ const splashStyles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderRightColor: 'transparent',
   },
-  outerRing: {
-    position: 'absolute',
-    width: 178,
-    height: 178,
-    borderRadius: 89,
-    borderWidth: 2,
-    borderColor: '#0a643b44',
-    borderTopColor: 'transparent',
-  },
   logo: {
     width: 110,
     height: 110,
   },
 });
+
 
 export default function RootLayout() {
   const appStartTime = useRef(Date.now()).current;
