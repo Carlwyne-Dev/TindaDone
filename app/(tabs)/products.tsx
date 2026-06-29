@@ -473,11 +473,47 @@ export default function ProductsScreen() {
       </View>
 
       <FlatList
-        data={filteredProducts}
+        data={(() => {
+          const rows: any[] = [];
+          rows.push({ id: 'search-bar', _isSearch: true });
+          if (filteredProducts.length === 0) {
+            rows.push({ id: 'empty-state', _isEmpty: true });
+          } else {
+            rows.push(...filteredProducts);
+          }
+          return rows;
+        })()}
         keyExtractor={(item) => item.id}
-        renderItem={renderProduct}
+        stickyHeaderIndices={[1]}
+        renderItem={({ item }) => {
+          if (item._isSearch) {
+            return (
+              <View style={styles.searchSection}>
+                <View style={styles.searchBar}>
+                  <Search size={20} color={Theme.colors.outline} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search products or categories..."
+                    placeholderTextColor={Theme.colors.outlineVariant}
+                    value={search}
+                    onChangeText={setSearch}
+                  />
+                </View>
+              </View>
+            );
+          }
+          if (item._isEmpty) {
+            return (
+              <View style={styles.emptyContainer}>
+                <Package size={48} color={Theme.colors.outlineVariant} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyText}>No products found.</Text>
+              </View>
+            );
+          }
+          return renderProduct({ item });
+        }}
         ListHeaderComponent={
-          <>
+          <View style={{ backgroundColor: Theme.colors.background }}>
             <View style={styles.statsContainer}>
               <View style={styles.mainStatCard}>
                 <View style={styles.statInfo}>
@@ -531,27 +567,9 @@ export default function ProductsScreen() {
         </ScrollView>
       </View>
 
-        <View style={styles.searchSection}>
-          <View style={styles.searchBar}>
-            <Search size={20} color={Theme.colors.outline} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search products or categories..."
-              placeholderTextColor={Theme.colors.outlineVariant}
-              value={search}
-              onChangeText={setSearch}
-            />
           </View>
-        </View>
-          </>
         }
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Package size={48} color={Theme.colors.outlineVariant} style={{ marginBottom: 12 }} />
-            <Text style={styles.emptyText}>No products found.</Text>
-          </View>
-        }
       />
 
       <TouchableOpacity 

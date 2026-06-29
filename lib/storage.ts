@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { Product, Transaction, TransactionItem, UtangRecord, RestockLog, BusinessSettings, Expense } from './types';
 
@@ -270,6 +270,25 @@ export async function saveTransaction(transaction: Transaction): Promise<void> {
   }
 }
 
+/**
+ * Save a payment/settlement transaction WITHOUT touching stock.
+ * Used when a debt is paid — items already left inventory at credit time.
+ */
+export async function savePaymentTransaction(transaction: Transaction): Promise<void> {
+  try {
+    const monthKey = getYearMonth(transaction.timestamp);
+    const partitionKey = getPartitionKey(monthKey);
+    const raw = await AsyncStorage.getItem(partitionKey);
+    const transactions: Transaction[] = raw ? JSON.parse(raw) : [];
+    transactions.unshift(transaction);
+    await AsyncStorage.setItem(partitionKey, JSON.stringify(transactions));
+    await registerMonthInIndex(monthKey);
+  } catch (e) {
+    console.error('Error saving payment transaction:', e);
+    throw e;
+  }
+}
+
 export async function getTodaysTransactions(): Promise<Transaction[]> {
   try {
     const mk = getYearMonth(new Date());
@@ -489,17 +508,17 @@ export async function markUtangPaid(id: string, paymentType: 'cash' | 'gcash'): 
       // Save the updated utang record
       await AsyncStorage.setItem(UTANG_KEY, JSON.stringify(records));
 
-      // Create a matching Transaction record for daily stats (Revenue Event)
-      // We pass an empty item list to avoid double-decrementing stock.
-      const transaction: Transaction = {
+      // Create a payment Transaction for stats — include original items for profit calc
+      // We use savePaymentTransaction so stock is NOT touched again.
+      const paymentTransaction: Transaction = {
         id: `pay-${record.id}-${Date.now()}`,
-        items: [],
+        items: record.items || [],
         total: record.amount,
         paymentType: paymentType,
         timestamp: new Date().toISOString()
       };
       
-      await saveTransaction(transaction);
+      await savePaymentTransaction(paymentTransaction);
     }
   } catch (e) {
     console.error('Error marking utang paid:', e);
@@ -888,4 +907,33 @@ export async function seedDemoItems(): Promise<void> {
     ];
     await AsyncStorage.setItem(EXPENSES_KEY, JSON.stringify(demoExpenses));
   }
+}
+
+export async function clearDemoItems(): Promise<void> {
+  // Remove demo products
+  const products = await getProducts();
+  await saveProducts(products.filter(p => !p.id.startsWith('demo-')));
+
+  // Remove demo transactions from every partition
+  const index = await getMonthIndex();
+  for (const mk of index) {
+    const key = getPartitionKey(mk);
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) continue;
+    const trans: Transaction[] = JSON.parse(raw);
+    const filtered = trans.filter(t => !t.id.startsWith('demo-'));
+    if (filtered.length === 0) {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await AsyncStorage.setItem(key, JSON.stringify(filtered));
+    }
+  }
+
+  // Remove demo utang
+  const utang = await getUtangRecords();
+  await AsyncStorage.setItem(UTANG_KEY, JSON.stringify(utang.filter(u => !u.id.startsWith('demo-'))));
+
+  // Remove demo expenses
+  const expenses = await getExpenses();
+  await AsyncStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses.filter(e => !e.id.startsWith('demo-'))));
 }

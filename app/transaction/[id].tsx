@@ -226,9 +226,7 @@ export default function TransactionDetailScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.doneButton} onPress={() => router.back()}>
-          <Text style={styles.doneButtonText}>Dismiss</Text>
-        </TouchableOpacity>
+
       </ScrollView>
 
       {/* Custom Alert Modal */}
@@ -453,20 +451,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     letterSpacing: -1,
   },
-  doneButton: {
-    marginTop: 12,
-    backgroundColor: Theme.colors.surfaceContainerHigh,
-    height: 64,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  doneButtonText: {
-    fontFamily: Theme.typography.headlineBlack,
-    color: Theme.colors.outline,
-    fontSize: 18,
-    letterSpacing: 0.5,
-  },
+
   actionsContainer: {
     marginTop: 24,
     gap: 12,

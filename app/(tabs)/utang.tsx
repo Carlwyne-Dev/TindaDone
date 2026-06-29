@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   StyleSheet, 
   View, 
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import { useFocusEffect } from 'expo-router';
 import { 
   User, 
   MapPin, 
@@ -83,10 +84,12 @@ export default function UtangScreen() {
     setAlertVisible(true);
   };
 
-  useEffect(() => {
-    loadRecords();
-    loadProducts();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadRecords();
+      loadProducts();
+    }, [])
+  );
 
   const locations = useMemo(() => {
     const locs = records.map(r => r.location).filter((l): l is string => !!l);

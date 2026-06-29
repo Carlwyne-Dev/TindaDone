@@ -10,7 +10,6 @@ import Animated, {
   FadeOutRight,
   Layout
 } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { useTintin } from '../context/TintinContext';
 import { Theme } from '../constants/Theme';
@@ -60,21 +59,19 @@ export const TintinMascot = () => {
       <Animated.View style={[styles.wrapper, mascotStyle]}>
         {/* Modern Floating Message Pill */}
         <Animated.View style={[styles.bubbleContainer, bubbleStyle]}>
-          <BlurView 
-            intensity={80} 
-            tint="light" 
+          <View 
             style={[
               styles.bubble,
               { 
                 borderColor: message?.type === 'success' ? '#10b981' : 
                              message?.type === 'warning' ? '#f59e0b' : 
                              message?.type === 'error' ? '#ef4444' : 
-                             'rgba(255,255,255,0.6)' 
+                             Theme.colors.primary 
               }
             ]}
           >
             <Text style={styles.bubbleText}>{message?.text}</Text>
-          </BlurView>
+          </View>
         </Animated.View>
 
         {/* Tintin Image */}
@@ -111,9 +108,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 30, // More rounded pill
-    borderWidth: 1.5,
+    borderWidth: 1,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.98)',
+    backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,

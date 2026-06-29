@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import { View, Dimensions } from 'react-native';
+import { View, Image, Dimensions, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -14,6 +14,15 @@ import {
   InterruptionModeIOS 
 } from 'expo-av';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StatusBar } from 'expo-status-bar';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+  FadeIn,
+} from 'react-native-reanimated';
 
 import {
   PlusJakartaSans_400Regular,
@@ -36,17 +45,77 @@ import { TintinMascot } from '../components/TintinMascot';
 import { syncActivationStatus } from '../lib/license';
 
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Custom animated loading screen
+function AppSplash() {
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(360, { duration: 1200, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, []);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  const RING = 160;
+
+  return (
+    <View style={splashStyles.container}>
+      <Animated.View entering={FadeIn.duration(400)} style={splashStyles.logoWrap}>
+        {/* Spinning dashed ring */}
+        <Animated.View style={[splashStyles.ring, spinStyle]} />
+        {/* Mascot */}
+        <Image
+          source={require('../assets/loading.png')}
+          style={splashStyles.logo}
+          resizeMode="contain"
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+const splashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoWrap: {
+    width: 160,
+    height: 160,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 3,
+    borderColor: Theme.colors.primary,
+    borderStyle: 'dashed',
+    borderTopColor: 'transparent',
+  },
+  logo: {
+    width: 110,
+    height: 110,
+  },
+});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -61,7 +130,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -69,11 +137,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
-      
-      // Check if license was remotely revoked
       syncActivationStatus();
-
-      // Configure Audio to play even in silent mode
       Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         allowsRecordingIOS: false,
@@ -87,28 +151,15 @@ export default function RootLayout() {
   }, [loaded]);
 
   if (!loaded) {
-    return null;
+    return <AppSplash />;
   }
 
   return (
     <SettingsProvider>
       <TintinProvider>
-        <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ 
-            width: '100%', 
-            maxWidth: 500, 
-            flex: 1, 
-            position: 'relative', 
-            backgroundColor: Theme.colors.background,
-            overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.5,
-            shadowRadius: 20,
-          }}>
-            <RootLayoutNav />
-            <TintinMascot />
-          </View>
+        <View style={{ flex: 1, backgroundColor: Theme.colors.background }}>
+          <RootLayoutNav />
+          <TintinMascot />
         </View>
       </TintinProvider>
     </SettingsProvider>
@@ -132,10 +183,11 @@ function RootLayoutNav() {
     checkAccess();
   }, []);
 
-  if (canEnter === null) return null; // still checking
+  if (canEnter === null) return <AppSplash />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style="dark" backgroundColor={Theme.colors.background} translucent={false} />
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ 
           contentStyle: { backgroundColor: Theme.colors.background }, 
@@ -155,3 +207,4 @@ function RootLayoutNav() {
     </GestureHandlerRootView>
   );
 }
+

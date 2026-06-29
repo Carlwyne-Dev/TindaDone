@@ -629,7 +629,12 @@ export default function ProductDetailScreen() {
           <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
           <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={() => setRestockVisible(false)} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Stock Integration</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Stock Integration</Text>
+              <TouchableOpacity onPress={() => setRestockVisible(false)}>
+                <X size={24} color={Theme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
             
             <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.typeSelector}>

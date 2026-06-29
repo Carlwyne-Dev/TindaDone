@@ -250,6 +250,7 @@ const styles = StyleSheet.create({
   summaryBar: {
     backgroundColor: Theme.colors.surfaceContainerLowest,
     marginHorizontal: 20,
+    marginTop: 20,
     marginBottom: 24,
     borderRadius: 32,
     padding: 24,

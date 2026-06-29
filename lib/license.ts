@@ -139,7 +139,7 @@ export async function syncActivationStatus(): Promise<void> {
   }
 }
 
-export async function startTrial(storeName?: string): Promise<{ success: boolean; error?: string }> {
+export async function startTrial(ownerName?: string): Promise<{ success: boolean; error?: string }> {
   const deviceId = await getOrCreateDeviceId();
 
   try {
@@ -151,7 +151,7 @@ export async function startTrial(storeName?: string): Promise<{ success: boolean
     const res = await fetch(`${API_BASE_URL}/api/trial-start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId, storeName: storeName || 'Unknown store' }),
+      body: JSON.stringify({ deviceId, ownerName: ownerName || 'Unknown Owner' }),
       signal: controller.signal
     }).catch(err => {
       console.warn('❌ Network Error during Trial Start:', err);

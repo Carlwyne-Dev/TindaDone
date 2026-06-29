@@ -9,7 +9,14 @@ export const calculateTodaysProfit = (transactions: Transaction[], products: Pro
   transactions.forEach(t => {
     t.items.forEach(item => {
       const p = products.find(prod => prod.id === item.productId);
-      const cost = item.costPriceAtSale ?? p?.costPrice;
+      let cost = item.costPriceAtSale;
+      if (cost === undefined) {
+        if (item.isPack) {
+          cost = p?.costPerPack ? parseFloat(p.costPerPack.toString()) : ((p?.costPrice || 0) * (p?.piecesPerPack || 1));
+        } else {
+          cost = p?.costPrice || 0;
+        }
+      }
       if (cost !== undefined) {
         profit += (item.priceAtSale - cost) * item.qty;
       }

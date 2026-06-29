@@ -8,10 +8,13 @@ import {
   Modal,
   Image,
   Dimensions,
-  Platform
+  Platform,
+  LayoutAnimation,
+  UIManager
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import Animated, { 
   FadeIn, 
   FadeOut, 
@@ -19,6 +22,7 @@ import Animated, {
   Layout, 
   FadeInDown,
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
   ZoomIn,
   withTiming
@@ -65,12 +69,21 @@ import { Theme } from '../../constants/Theme';
 
 const { width } = Dimensions.get('window');
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function StatsScreen() {
   const router = useRouter();
   const { businessSettings, setIsSettingsOpen } = useSettings();
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [period, setPeriod] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const periodPillX = useSharedValue(0);
+  const PERIODS: ('daily' | 'monthly' | 'yearly')[] = ['daily', 'monthly', 'yearly'];
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'sales' | 'credit'>('all');
+  const historyPillX = useSharedValue(0);
+  const HISTORY_FILTERS: ('all' | 'sales' | 'credit')[] = ['all', 'sales', 'credit'];
   const [chartData, setChartData] = useState<{label: string, value: number, height: number, transactions: Transaction[]}[]>([]);
   const [showChart, setShowChart] = useState(true);
   const [selectedChartIndex, setSelectedChartIndex] = useState<number | null>(null);
@@ -89,7 +102,27 @@ export default function StatsScreen() {
   const [todaysUtangCollected, setTodaysUtangCollected] = useState(0);
   const [todaysExpenses, setTodaysExpenses] = useState(0);
   const [allUtangRecords, setAllUtangRecords] = useState<UtangRecord[]>([]);
-  const [historyFilter, setHistoryFilter] = useState<'all' | 'sales' | 'credit'>('all');
+
+
+  const handlePeriodChange = (newPeriod: 'daily' | 'monthly' | 'yearly') => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const idx = PERIODS.indexOf(newPeriod);
+    periodPillX.value = withSpring(idx, { damping: 18, stiffness: 160, mass: 0.8 });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPeriod(newPeriod);
+  };
+
+  const handleHistoryFilterChange = (newFilter: 'all' | 'sales' | 'credit') => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const idx = HISTORY_FILTERS.indexOf(newFilter);
+    historyPillX.value = withSpring(idx, { damping: 18, stiffness: 160, mass: 0.8 });
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setHistoryFilter(newFilter);
+  };
 
   const [showCloseout, setShowCloseout] = useState(false);
   const [showGcash, setShowGcash] = useState(false);
@@ -212,8 +245,8 @@ export default function StatsScreen() {
     setTodaysSales(calculateTodaysSales(activeData));
     setTodaysProfit(calculateTodaysProfit(activeData, allProducts));
     setPaymentStats(getPaymentBreakdown(activeData));
-    
-    // Combine regular sales with new debt records for history
+
+    // Combine real sales with utang records for the history list only
     const today = new Date().toISOString().split('T')[0];
     const todayNewDebt = allUtangRecords
       .filter(r => r.createdAt.startsWith(today))
@@ -228,7 +261,7 @@ export default function StatsScreen() {
 
     const combined = [...activeData, ...todayNewDebt]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    
+
     // Apply History Filter
     let filtered = combined;
     if (historyFilter === 'sales') {
@@ -266,14 +299,22 @@ export default function StatsScreen() {
       </View>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 110 }]}>
 
-        {/* Period Selector Tabs */}
+        {/* Period Selector Tabs - Sliding Pill */}
         <View style={styles.periodTabs}>
-          {['daily', 'monthly', 'yearly'].map((p) => (
+          <Animated.View
+            style={[
+              styles.periodPill,
+              useAnimatedStyle(() => ({
+                transform: [{ translateX: withSpring(periodPillX.value * ((width - 32 - 8) / 3), { damping: 18, stiffness: 160, mass: 0.8 }) }],
+              }))
+            ]}
+          />
+          {PERIODS.map((p) => (
             <TouchableOpacity 
               key={p} 
-              style={[styles.periodTab, period === p && styles.periodTabActive]}
-              onPress={() => setPeriod(p as any)}
-              activeOpacity={0.7}
+              style={styles.periodTab}
+              onPress={() => handlePeriodChange(p)}
+              activeOpacity={0.85}
             >
               <Text style={[styles.periodTabText, period === p && styles.periodTabTextActive]}>
                 {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -421,24 +462,26 @@ export default function StatsScreen() {
           </View>
 
           <View style={styles.historySwitcher}>
-            <TouchableOpacity 
-              style={[styles.historyTab, historyFilter === 'all' && styles.historyTabActive]}
-              onPress={() => setHistoryFilter('all')}
-            >
-              <Text style={[styles.historyTabText, historyFilter === 'all' && styles.historyTabTextActive]}>All</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.historyTab, historyFilter === 'sales' && styles.historyTabActive]}
-              onPress={() => setHistoryFilter('sales')}
-            >
-              <Text style={[styles.historyTabText, historyFilter === 'sales' && styles.historyTabTextActive]}>Sales</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.historyTab, historyFilter === 'credit' && styles.historyTabActive]}
-              onPress={() => setHistoryFilter('credit')}
-            >
-              <Text style={[styles.historyTabText, historyFilter === 'credit' && styles.historyTabTextActive]}>Credit</Text>
-            </TouchableOpacity>
+            <Animated.View
+              style={[
+                styles.historyPill,
+                useAnimatedStyle(() => ({
+                  transform: [{ translateX: withSpring(historyPillX.value * ((width - 32 - 8) / 3), { damping: 18, stiffness: 160, mass: 0.8 }) }],
+                }))
+              ]}
+            />
+            {HISTORY_FILTERS.map((f) => (
+              <TouchableOpacity 
+                key={f}
+                style={styles.historyTab}
+                onPress={() => handleHistoryFilterChange(f)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.historyTabText, historyFilter === f && styles.historyTabTextActive]}>
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
           
           <View style={styles.ledgerCard}>
@@ -446,27 +489,33 @@ export default function StatsScreen() {
               <View style={styles.emptyRecent}><Text style={styles.emptyRecentText}>No sales yet today.</Text></View>
             ) : (
               recentTransactions.map((t, index) => (
-                <TouchableOpacity 
-                  key={t.id} 
-                  style={[styles.transactionItem, index === recentTransactions.length - 1 && { borderBottomWidth: 0 }]}
-                  onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: t.id } })}
+                <Animated.View 
+                  key={t.id}
+                  layout={Layout.springify()}
+                  entering={FadeInDown.delay(index * 50).springify()}
+                  exiting={FadeOut.duration(150)}
                 >
-                  <View style={styles.transactionIcon}>{getTransactionIcon(t)}</View>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionTitle} numberOfLines={1}>
-                      {(t as any).paymentType === 'utang' 
-                        ? `Utang: ${(t as any).customerName}`
-                        : (t.items.length === 0 
-                          ? 'Debt Settlement' 
-                          : (t.items.length > 1 ? `${t.items[0].productName} +${t.items.length - 1}` : t.items[0].productName))
-                      }
-                    </Text>
-                    <Text style={styles.transactionMeta}>
-                      {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.paymentType.toUpperCase()}
-                    </Text>
-                  </View>
-                  <Text style={styles.transactionAmount}>₱{t.total.toFixed(0)}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.transactionItem, index === recentTransactions.length - 1 && { borderBottomWidth: 0 }]}
+                    onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: t.id } })}
+                  >
+                    <View style={styles.transactionIcon}>{getTransactionIcon(t)}</View>
+                    <View style={styles.transactionInfo}>
+                      <Text style={styles.transactionTitle} numberOfLines={1}>
+                        {(t as any).paymentType === 'utang' 
+                          ? `Utang: ${(t as any).customerName}`
+                          : (t.items.length === 0 
+                            ? 'Debt Settlement' 
+                            : (t.items.length > 1 ? `${t.items[0].productName} +${t.items.length - 1}` : t.items[0].productName))
+                        }
+                      </Text>
+                      <Text style={styles.transactionMeta}>
+                        {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.paymentType.toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={styles.transactionAmount}>₱{t.total.toFixed(0)}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
               ))
             )}
           </View>
@@ -489,7 +538,7 @@ export default function StatsScreen() {
             >
             <View style={styles.summaryHeader}>
               <Store size={40} color={Theme.colors.primary} style={{ marginBottom: 12 }} />
-              <Text style={styles.summaryTitle}>{businessSettings.storeName || 'TindaDone'}</Text>
+              <Text style={styles.summaryTitle}>{businessSettings.ownerName || 'TindaDone'}</Text>
               <Text style={styles.summarySubtitle}>Daily Performance Report</Text>
               <Text style={styles.summaryDate}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
             </View>
@@ -645,20 +694,28 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 20,
   },
+  periodPill: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: '33.333%',
+    bottom: 4,
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
   periodTab: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
     borderRadius: 16,
+    zIndex: 1,
   },
-  periodTabActive: {
-    backgroundColor: '#FFF',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+  periodTabActive: {},
   periodTabText: {
     fontFamily: Theme.typography.bodySemiBold,
     color: Theme.colors.outline,
@@ -860,20 +917,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Theme.colors.outlineVariant + '40',
   },
-  historyTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  historyTabActive: {
+  historyPill: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: '33.333%',
+    bottom: 4,
     backgroundColor: Theme.colors.primary,
+    borderRadius: 20,
     shadowColor: Theme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
+  historyTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 20,
+    zIndex: 1,
+  },
+  historyTabActive: {},
   historyTabText: {
     fontFamily: Theme.typography.bodyBold,
     fontSize: 13,

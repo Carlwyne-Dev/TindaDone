@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Dimensions, Text, Modal, TextInput, Switch, Alert, Platform, InteractionManager, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
-import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus } from 'lucide-react-native';
+import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, User, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus } from 'lucide-react-native';
 import { isActivated, getTrialStatus } from '../../lib/license';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { 
@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useColorScheme } from '../../components/useColorScheme';
 import { Theme } from '../../constants/Theme';
-import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES, seedDemoItems } from '../../lib/storage';
+import { getBusinessSettings, saveBusinessSettings, exportData, DEFAULT_CATEGORIES, seedDemoItems, clearDemoItems, getProducts } from '../../lib/storage';
 import { BusinessSettings } from '../../lib/types';
 import { useSettings } from '../../context/SettingsContext';
 import { useTintin } from '../../context/TintinContext';
@@ -102,6 +102,7 @@ export default function TabLayout() {
   const [trialExpired, setTrialExpired] = React.useState(false);
   const [showSeedConfirm, setShowSeedConfirm] = React.useState(false);
   const [isSeedLoading, setIsSeedLoading] = React.useState(false);
+  const [isDemoActive, setIsDemoActive] = React.useState(false);
   
   const { say } = useTintin();
   const hasGreeted = React.useRef(false);
@@ -115,13 +116,13 @@ export default function TabLayout() {
     if (hour < 12) timeGreeting = 'Good morning';
     else if (hour < 18) timeGreeting = 'Good afternoon';
     
-    const ownerName = businessSettings?.storeName ? ` ${businessSettings.storeName}` : '';
+    const ownerName = businessSettings?.ownerName ? ` ${businessSettings.ownerName}` : '';
     
     hasGreeted.current = true;
     setTimeout(() => {
       say(`${timeGreeting}${ownerName}! Let's make some sales!`, 'success');
     }, 1000);
-  }, [businessSettings.storeName]); // Run when storeName is available/loaded
+  }, [businessSettings.ownerName]); // Run when ownerName is available/loaded
 
   // Security Guard: Ensure user has valid trial or activation
   React.useEffect(() => {
@@ -152,10 +153,17 @@ export default function TabLayout() {
 
   const handleSeedDemo = () => setShowSeedConfirm(true);
 
+  // Check if demo data is currently active
+  const checkDemoStatus = async () => {
+    const products = await getProducts();
+    setIsDemoActive(products.some(p => p.id.startsWith('demo-')));
+  };
+
   const doSeed = async () => {
     setIsSeedLoading(true);
     try {
       await seedDemoItems();
+      setIsDemoActive(true);
       setIsSeedLoading(false);
       setShowSeedConfirm(false);
       setIsSettingsOpen(false);
@@ -165,6 +173,23 @@ export default function TabLayout() {
       console.error(e);
       setIsSeedLoading(false);
       setShowSeedConfirm(false);
+    }
+  };
+
+  const handleDemoToggle = async (val: boolean) => {
+    setIsSeedLoading(true);
+    try {
+      if (val) {
+        await seedDemoItems();
+        setIsDemoActive(true);
+      } else {
+        await clearDemoItems();
+        setIsDemoActive(false);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSeedLoading(false);
     }
   };
 
@@ -349,6 +374,7 @@ export default function TabLayout() {
       animationType="slide"
       transparent={true}
       onRequestClose={() => setIsSettingsOpen(false)}
+      onShow={checkDemoStatus}
     >
       <View style={styles.modalOverlay}>
         <BlurView intensity={100} tint="light" style={StyleSheet.absoluteFill} />
@@ -369,15 +395,15 @@ export default function TabLayout() {
 
           <ScrollView style={styles.settingsScroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
             <View style={styles.settingGroup}>
-              <Text style={styles.groupLabel}>Identity</Text>
+              <Text style={styles.groupLabel}>Owner</Text>
               <View style={styles.inputCard}>
-                <Store size={18} color={Theme.colors.primary} />
+                <User size={18} color={Theme.colors.primary} />
                 <TextInput
                   style={styles.textInput}
-                  placeholder="Official Store Name"
+                  placeholder="Your Name"
                   placeholderTextColor={Theme.colors.outlineVariant}
-                  value={tempSettings.storeName || ''}
-                  onChangeText={(text) => setTempSettings(prev => ({ ...prev, storeName: text }))}
+                  value={tempSettings.ownerName || ''}
+                  onChangeText={(text) => setTempSettings(prev => ({ ...prev, ownerName: text }))}
                 />
               </View>
 
@@ -494,19 +520,24 @@ export default function TabLayout() {
                   <Text style={styles.backupSub}>Export products & ledger (JSON)</Text>
                 </View>
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.backupCard, { marginTop: 12, borderColor: Theme.colors.primary + '30' }]} 
-                onPress={handleSeedDemo}
-              >
-                <View style={[styles.backupIcon, { backgroundColor: Theme.colors.primary + '15' }]}>
-                  <Plus size={20} color={Theme.colors.primary} />
+              <View style={[styles.featureCard, { marginTop: 12 }]}>
+                <View style={styles.featureInfo}>
+                  <Database size={20} color={Theme.colors.primary} />
+                  <View>
+                    <Text style={styles.featureTitle}>Demo Data</Text>
+                    <Text style={styles.featureDesc}>
+                      {isDemoActive ? 'Tap to remove mock data' : 'Load sample products & history'}
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.backupTitle}>Seed Demo Data</Text>
-                  <Text style={styles.backupSub}>Populate mock products & history</Text>
-                </View>
-              </TouchableOpacity>
+                <Switch
+                  value={isDemoActive}
+                  onValueChange={handleDemoToggle}
+                  disabled={isSeedLoading}
+                  trackColor={{ false: Theme.colors.outlineVariant, true: Theme.colors.primary }}
+                  thumbColor="#FFF"
+                />
+              </View>
             </View>
           </ScrollView>
 
@@ -514,54 +545,6 @@ export default function TabLayout() {
             <CheckCircle2 size={20} color="#FFF" />
             <Text style={styles.finalSaveText}>Apply Changes</Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-
-    {/* Seed Demo Confirmation Modal */}
-    <Modal
-      visible={showSeedConfirm}
-      animationType="fade"
-      transparent={true}
-      onRequestClose={() => setShowSeedConfirm(false)}
-    >
-      <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center', zIndex: 99999 }]}>
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-        <View style={[styles.modalContent, { height: 'auto', padding: 28, marginHorizontal: 24, borderRadius: 28, backgroundColor: Theme.colors.surface, elevation: 999, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20 }]}>
-          {/* Icon */}
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Theme.colors.primary + '18', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 20 }}>
-            <Database size={30} color={Theme.colors.primary} />
-          </View>
-
-          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 22, color: Theme.colors.onSurface, textAlign: 'center', marginBottom: 10, letterSpacing: -0.5 }}>
-            Load Demo Data?
-          </Text>
-
-          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 22, marginBottom: 28 }}>
-            This will add 8 sari-sari store products, 5 days of sale history, sample debts, and expenses.{`\n\n`}Your existing data will{' '}
-            <Text style={{ fontFamily: Theme.typography.bodyBold, color: Theme.colors.onSurface }}>not</Text>{' '}be deleted.
-          </Text>
-
-          {/* Buttons */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <TouchableOpacity
-              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, borderColor: Theme.colors.outline + '50', alignItems: 'center' }}
-              onPress={() => setShowSeedConfirm(false)}
-              disabled={isSeedLoading}
-            >
-              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: Theme.colors.onSurfaceVariant }}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ flex: 1, paddingVertical: 14, borderRadius: 16, backgroundColor: Theme.colors.primary, alignItems: 'center', opacity: isSeedLoading ? 0.7 : 1 }}
-              onPress={doSeed}
-              disabled={isSeedLoading}
-            >
-              <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 15, color: '#FFF' }}>
-                {isSeedLoading ? 'Loading...' : 'Seed Data'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     </Modal>

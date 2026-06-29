@@ -69,7 +69,7 @@ export type Expense = {
 
 export type BusinessSettings = {
   gcashQrUri?: string;
-  storeName?: string;
+  ownerName?: string;
   scannerBeep?: boolean;
   scannerVibrate?: boolean;
   enableBulkMode?: boolean;

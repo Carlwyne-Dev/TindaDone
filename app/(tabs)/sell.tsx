@@ -32,6 +32,7 @@ import {
   ShoppingCart, 
   Trash2, 
   ChevronRight, 
+  ChevronLeft, 
   CheckCircle2, 
   X,
   CreditCard,
@@ -62,7 +63,11 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withSequence,
-  withTiming
+  withTiming,
+  withSpring,
+  interpolate,
+  Extrapolate,
+  Easing
 } from 'react-native-reanimated';
 import DraggableFlatList, { ScaleDecorator, OpacityDecorator, ShadowDecorator } from 'react-native-draggable-flatlist';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -179,10 +184,103 @@ export default function SellScreen() {
   const [editingItem, setEditingItem] = useState<TransactionItem | null>(null);
   const [tempQty, setTempQty] = useState('');
   const [isCartPeeking, setIsCartPeeking] = useState(false);
+  const [isCartForceExpanded, setIsCartForceExpanded] = useState(false);
+  const cartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reanimated shared values for cart pill morph
+  const cartExpanded = useSharedValue(0); // 0 = collapsed circle, 1 = full pill
+  const cartVisible = useSharedValue(0);  // 0 = hidden, 1 = visible
+  const isTucked = useSharedValue(0); // 0 = fully visible, 1 = tucked to the right
+  const lastScrollY = useSharedValue(0);
+  const tuckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Initial tuck timer
+  useEffect(() => {
+    tuckTimerRef.current = setTimeout(() => {
+      isTucked.value = 1;
+    }, 2000);
+    return () => {
+      if (tuckTimerRef.current) clearTimeout(tuckTimerRef.current);
+    };
+  }, []);
+
+  const PILL_WIDTH = width - 40; // screen width minus horizontal padding
+  const CIRCLE_SIZE = 64;
+
+  const cartContainerAnimStyle = useAnimatedStyle(() => ({
+    width: interpolate(cartExpanded.value, [0, 1], [CIRCLE_SIZE, PILL_WIDTH]),
+    height: CIRCLE_SIZE,
+    borderRadius: interpolate(cartExpanded.value, [0, 1], [CIRCLE_SIZE / 2, CIRCLE_SIZE / 2]),
+    opacity: cartVisible.value,
+    alignSelf: 'flex-end',
+    transform: [{
+      translateX: withTiming(
+        isTucked.value === 1 && cartExpanded.value === 0 ? 56 : 0, 
+        { duration: 250, easing: Easing.out(Easing.ease) }
+      )
+    }]
+  }));
+
+  const scanFabAnimStyle = useAnimatedStyle(() => ({
+    transform: [{
+      translateX: withTiming(
+        isTucked.value === 1 ? 56 : 0, 
+        { duration: 250, easing: Easing.out(Easing.ease) }
+      )
+    }]
+  }));
+
+  // Content inside expanded pill
+  const pillContentOpacity = useAnimatedStyle(() => ({
+    opacity: interpolate(cartExpanded.value, [0, 0.5, 1], [0, 0, 1], Extrapolate.CLAMP),
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  }));
+
+  // Icon + badge inside collapsed circle
+  const circleContentOpacity = useAnimatedStyle(() => ({
+    opacity: interpolate(cartExpanded.value, [0, 0.5, 1], [1, 0, 0], Extrapolate.CLAMP),
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }));
+
+  // Animate cart in/out when cart has items
+  useEffect(() => {
+    if (cart.length > 0) {
+      cartVisible.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.ease) });
+    } else {
+      cartVisible.value = withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) });
+      cartExpanded.value = withSpring(0, { damping: 20, stiffness: 300 });
+    }
+  }, [cart.length]);
+
+  // Animate pill expand/collapse on isCartForceExpanded change
+  useEffect(() => {
+    cartExpanded.value = withSpring(isCartForceExpanded ? 1 : 0, {
+      damping: 22,
+      stiffness: 280,
+      mass: 0.8,
+    });
+  }, [isCartForceExpanded]);
+
+  // Auto-collapse cart after activity
+  useEffect(() => {
+    if (cart.length > 0) {
+      setIsCartForceExpanded(true);
+      if (cartTimerRef.current) clearTimeout(cartTimerRef.current);
+      cartTimerRef.current = setTimeout(() => {
+        setIsCartForceExpanded(false);
+      }, 2500);
+    }
+  }, [cart]);
   
   // Welcome & Settings
   const [showWelcome, setShowWelcome] = useState(false);
-  const [storeName, setStoreName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
   
   // Custom categories state for drag-and-drop
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false);
@@ -251,14 +349,14 @@ export default function SellScreen() {
   };
 
   const handleSaveInitialSettings = async () => {
-    if (!storeName.trim()) {
-      showAlert('Required', 'Please enter your store name to continue.', 'warning');
+    if (!ownerName.trim()) {
+      showAlert('Required', 'Please enter your name to continue.', 'warning');
       return;
     }
-    const updated = { ...businessSettings, storeName: storeName.trim() };
+    const updated = { ...businessSettings, ownerName: ownerName.trim() };
     await updateSettings(updated);
     await markWelcomeAsSeen();
-    showAlert('All Set!', `Welcome to TindaDone, ${storeName.trim()}!`, 'success');
+    showAlert('All Set!', `Welcome to TindaDone, ${ownerName.trim()}! 🎉`, 'success');
   };
 
   const checkLicense = async () => {
@@ -285,6 +383,19 @@ export default function SellScreen() {
     };
     checkEOD();
   }, []);
+
+  // Layout Morphing Animation for Cart Pill/Circle
+  const prevCartLength = useRef(0);
+  useEffect(() => {
+    const wasEmpty = prevCartLength.current === 0;
+    const isEmpty = cart.length === 0;
+    if (wasEmpty !== isEmpty) {
+      if (Platform.OS === 'ios' || Platform.OS === 'android') {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+      }
+    }
+    prevCartLength.current = cart.length;
+  }, [cart.length]);
 
   useEffect(() => {
     let filtered = products;
@@ -600,205 +711,252 @@ export default function SellScreen() {
         </View>
       )}
 
-      {/* Sticky Fast Access */}
-      {topProducts.length > 0 && !search && (
-        <View style={styles.topProductsSection}>
-          <Text style={styles.sectionTitle}>Fast Access</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.topProductsScroll}
-          >
-            {topProducts.map((p) => {
-              const fullProd = products.find(fp => fp.id === p.id);
-              if (!fullProd) return null;
-              return (
-                <TouchableOpacity 
-                  key={p.id} 
-                  style={styles.shortcutCard}
-                  onPress={() => addToCart(fullProd)}
-                >
-                  <View style={styles.shortcutIcon}>
-                    {fullProd.photoUri ? (
-                      <Image source={{ uri: fullProd.photoUri }} style={styles.shortcutImage} />
-                    ) : (
-                      <View style={styles.shortcutPlaceholder}>
-                        <Text style={styles.shortcutLetter}>{fullProd.name[0].toUpperCase()}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.shortcutLabel} numberOfLines={1}>{fullProd.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Sticky Categories Filter */}
-      {categories.length > 0 && (
-        <View style={styles.categoriesSection}>
-          <DraggableFlatList
-            horizontal
-            activationDistance={15}
-            showsHorizontalScrollIndicator={false}
-            data={localCategories}
-            onDragBegin={() => setIsDraggingGlobal(true)}
-            onDragEnd={({ data }) => {
-              setIsDraggingGlobal(false);
-              setLocalCategories(data);
-              // Defer global state update to prevent JS thread blocking during the drop animation
-              setTimeout(() => {
-                updateSettings({ ...businessSettings, customCategories: data });
-              }, 300);
-            }}
-            keyExtractor={(item) => item}
-            ListHeaderComponent={
-              <TouchableOpacity 
-                style={[styles.catChip, activeCategory === 'All' && styles.catChipActive]}
-                onPress={() => setActiveCategory('All')}
-              >
-                <Text style={[styles.catChipText, activeCategory === 'All' && styles.catChipTextActive]}>All</Text>
-              </TouchableOpacity>
-            }
-            renderItem={({ item, drag, isActive }) => (
-              <DraggableCategoryChip
-                item={item}
-                drag={drag}
-                isActive={isActive}
-                isDraggingGlobal={isDraggingGlobal}
-                activeCategory={activeCategory}
-                setActiveCategory={setActiveCategory}
-              />
-            )}
-            contentContainerStyle={{ paddingVertical: 16, overflow: 'visible' }}
-            containerStyle={{ overflow: 'visible' }}
-          />
-        </View>
-      )}
-
-      {/* Sticky Search */}
-      <View style={styles.searchSection}>
-        <View style={styles.searchInputContainer}>
-          <Search size={20} color={Theme.colors.outline} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search products..."
-            placeholderTextColor={Theme.colors.outlineVariant}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-      </View>
-
       <FlatList
-        data={filteredProducts}
+        data={(() => {
+          const rows: any[] = [];
+          rows.push({ id: 'search-bar', type: 'search' });
+          if (filteredProducts.length === 0) {
+            rows.push({ id: 'empty-state', type: 'empty' });
+          } else {
+            for (let i = 0; i < filteredProducts.length; i += 2) {
+              rows.push({
+                id: `row-${i}`,
+                type: 'row',
+                items: filteredProducts.slice(i, i + 2),
+                startIndex: i
+              });
+            }
+          }
+          return rows;
+        })()}
         keyExtractor={(item) => item.id}
-        renderItem={renderProduct}
-        numColumns={2}
-        contentContainerStyle={[styles.productList, filteredProducts.length === 0 && { flex: 1 }]}
-        ListEmptyComponent={
-          <View style={styles.emptyStateContainer}>
-            {products.length === 0 ? (
-              <>
-                <View style={styles.emptyIconCircle}>
-                  <Store size={48} color={Theme.colors.primary} />
+        stickyHeaderIndices={[1]}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const currentY = e.nativeEvent.contentOffset.y;
+          if (currentY > lastScrollY.value + 10 && currentY > 0) {
+            // Scrolling Down: Tuck immediately
+            isTucked.value = 1;
+            if (tuckTimerRef.current) clearTimeout(tuckTimerRef.current);
+          } else if (currentY < lastScrollY.value - 10 || currentY <= 0) {
+            // Scrolling Up: Show immediately, but auto-tuck after 2s
+            isTucked.value = 0;
+            if (tuckTimerRef.current) clearTimeout(tuckTimerRef.current);
+            tuckTimerRef.current = setTimeout(() => {
+              isTucked.value = 1;
+            }, 2000);
+          }
+          lastScrollY.value = currentY;
+        }}
+        renderItem={({ item }) => {
+          if (item.type === 'search') {
+            return (
+              <View style={styles.searchSection}>
+                <View style={styles.searchInputContainer}>
+                  <Search size={20} color={Theme.colors.outline} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search products..."
+                    placeholderTextColor={Theme.colors.outlineVariant}
+                    value={search}
+                    onChangeText={setSearch}
+                  />
                 </View>
-                <Text style={styles.emptyStateTitle}>Your shop is empty!</Text>
-                <Text style={styles.emptyStateSub}>Head over to the Inventory tab to start adding your items.</Text>
-                <TouchableOpacity 
-                  style={styles.emptyStateBtn}
-                  onPress={() => router.push({ pathname: '/(tabs)/products', params: { action: 'add' } })}
+              </View>
+            );
+          }
+          if (item.type === 'empty') {
+            return (
+              <View style={styles.emptyStateContainer}>
+                {products.length === 0 ? (
+                  <>
+                    <View style={styles.emptyIconCircle}>
+                      <Store size={48} color={Theme.colors.primary} />
+                    </View>
+                    <Text style={styles.emptyStateTitle}>Your shop is empty!</Text>
+                    <Text style={styles.emptyStateSub}>Head over to the Inventory tab to start adding your items.</Text>
+                    <TouchableOpacity 
+                      style={styles.emptyStateBtn}
+                      onPress={() => router.push({ pathname: '/(tabs)/products', params: { action: 'add' } })}
+                    >
+                      <Text style={styles.emptyStateBtnText}>Add First Product</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.emptyIconCircle, { backgroundColor: Theme.colors.surfaceContainerHigh }]}>
+                      <Search size={48} color={Theme.colors.outline} />
+                    </View>
+                    <Text style={styles.emptyStateTitle}>No items found</Text>
+                    <Text style={styles.emptyStateSub}>We couldn't find any products matching your search.</Text>
+                  </>
+                )}
+              </View>
+            );
+          }
+          if (item.type === 'row') {
+            return (
+              <View style={{ flexDirection: 'row' }}>
+                {item.items.map((prod: any, idx: number) => (
+                  <View key={prod.id} style={{ flex: 1, paddingLeft: idx === 1 ? 6 : 0, paddingRight: idx === 0 && item.items.length === 2 ? 6 : 0 }}>
+                    {renderProduct({ item: prod, index: item.startIndex + idx })}
+                  </View>
+                ))}
+                {item.items.length === 1 && <View style={{ flex: 1, paddingLeft: 6 }} />}
+              </View>
+            );
+          }
+          return null;
+        }}
+        contentContainerStyle={[styles.productList, filteredProducts.length === 0 && { flexGrow: 1 }]}
+        ListHeaderComponent={
+          <View style={{ backgroundColor: Theme.colors.background }}>
+            {/* Scrollable Fast Access */}
+            {topProducts.length > 0 && !search && (
+              <View style={styles.topProductsSection}>
+                <Text style={styles.sectionTitle}>Fast Access</Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.topProductsScroll}
                 >
-                  <Text style={styles.emptyStateBtnText}>Add First Product</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={[styles.emptyIconCircle, { backgroundColor: Theme.colors.surfaceContainerHigh }]}>
-                  <Search size={48} color={Theme.colors.outline} />
-                </View>
-                <Text style={styles.emptyStateTitle}>No items found</Text>
-                <Text style={styles.emptyStateSub}>We couldn't find any products matching your search.</Text>
-              </>
+                  {topProducts.map((p) => {
+                    const fullProd = products.find(fp => fp.id === p.id);
+                    if (!fullProd) return null;
+                    return (
+                      <TouchableOpacity 
+                        key={p.id} 
+                        style={styles.shortcutCard}
+                        onPress={() => addToCart(fullProd)}
+                      >
+                        <View style={styles.shortcutIcon}>
+                          {fullProd.photoUri ? (
+                            <Image source={{ uri: fullProd.photoUri }} style={styles.shortcutImage} />
+                          ) : (
+                            <View style={styles.shortcutPlaceholder}>
+                              <Text style={styles.shortcutLetter}>{fullProd.name[0].toUpperCase()}</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.shortcutLabel} numberOfLines={1}>{fullProd.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Scrollable Categories Filter */}
+            {categories.length > 0 && (
+              <View style={styles.categoriesSection}>
+                <DraggableFlatList
+                  horizontal
+                  activationDistance={15}
+                  showsHorizontalScrollIndicator={false}
+                  data={localCategories}
+                  onDragBegin={() => setIsDraggingGlobal(true)}
+                  onDragEnd={({ data }) => {
+                    setIsDraggingGlobal(false);
+                    setLocalCategories(data);
+                    // Defer global state update to prevent JS thread blocking during the drop animation
+                    setTimeout(() => {
+                      updateSettings({ ...businessSettings, customCategories: data });
+                    }, 300);
+                  }}
+                  keyExtractor={(item) => item}
+                  ListHeaderComponent={
+                    <TouchableOpacity 
+                      style={[styles.catChip, activeCategory === 'All' && styles.catChipActive]}
+                      onPress={() => setActiveCategory('All')}
+                    >
+                      <Text style={[styles.catChipText, activeCategory === 'All' && styles.catChipTextActive]}>All</Text>
+                    </TouchableOpacity>
+                  }
+                  renderItem={({ item, drag, isActive }) => (
+                    <DraggableCategoryChip
+                      item={item}
+                      drag={drag}
+                      isActive={isActive}
+                      isDraggingGlobal={isDraggingGlobal}
+                      activeCategory={activeCategory}
+                      setActiveCategory={setActiveCategory}
+                    />
+                  )}
+                  contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 16, overflow: 'visible' }}
+                  containerStyle={{ overflow: 'visible' }}
+                />
+              </View>
             )}
           </View>
         }
       />
 
-      {cart.length > 0 && (
-        <Animated.View 
-          entering={FadeInDown.springify()} 
-          exiting={FadeOutDown} 
-          style={styles.floatingCartContainer}
-        >
-          {/* Thought Bubble Peek Extension */}
-          {isCartPeeking && (
-            <Animated.View 
-              entering={ZoomIn.duration(200)}
-              exiting={ZoomOut.duration(150)}
-              style={styles.cartPeekExtension}
-            >
-              <View style={styles.peekBubbleContainer}>
-                <View style={styles.peekShadowWrapper}>
-                  <BlurView intensity={95} tint="light" style={styles.peekBlur}>
-                    <Text style={styles.peekTitle}>Quick Review</Text>
-                    <ScrollView style={{ maxHeight: 150 }} showsVerticalScrollIndicator={false}>
-                      {cart.map((item) => (
-                        <View key={item.productId} style={styles.peekItem}>
-                          <Text style={styles.peekItemName} numberOfLines={1}>{item.productName}</Text>
-                          <Text style={styles.peekItemQty}>×{item.qty}</Text>
-                        </View>
-                      ))}
-                    </ScrollView>
-                  </BlurView>
-                </View>
-                {/* Speech Bubble Tail */}
-                <View style={styles.peekTail} />
-              </View>
-            </Animated.View>
-          )}
+      {/* Smart Floating Cart */}
+      <Animated.View 
+        style={[
+          styles.floatingCartContainer,
+          cartContainerAnimStyle,
+          { backgroundColor: Theme.colors.primary, overflow: 'hidden' }
+        ]}
+      >
+        {/* Collapsed circle: icon + badge */}
+        <Animated.View style={[circleContentOpacity, { width: CIRCLE_SIZE, height: CIRCLE_SIZE, alignItems: 'center', justifyContent: 'center' }]}>
+          <ShoppingBag size={24} color="#FFF" />
+          <View style={styles.collapsedBadge}>
+            <Text style={styles.collapsedBadgeText}>{cart.reduce((sum, item) => sum + item.qty, 0)}</Text>
+          </View>
+        </Animated.View>
 
-          <TouchableOpacity 
-            style={styles.floatingCartPill}
-            onPress={() => setCheckoutModalVisible(true)}
-            onLongPress={() => {
+        {/* Expanded pill: full info */}
+        <Animated.View style={pillContentOpacity} pointerEvents={isCartForceExpanded ? 'auto' : 'none'}>
+          <View style={styles.pillLeft}>
+            <View style={styles.itemCountBadge}>
+              <Text style={styles.itemCountText}>{cart.reduce((sum, item) => sum + item.qty, 0)}</Text>
+            </View>
+            <Text style={styles.pillLabel}>{cart.reduce((sum, item) => sum + item.qty, 0) === 1 ? 'Item' : 'Items'} Selected</Text>
+          </View>
+          <View style={styles.pillRight}>
+            <Text style={styles.pillTotal}>₱{total.toLocaleString()}</Text>
+            <View style={styles.pillAction}>
+              <ShoppingBag size={20} color="#FFF" />
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Invisible full-area touch handler */}
+        <TouchableOpacity
+          style={StyleSheet.absoluteFillObject}
+          onPress={() => {
+            if (!isCartForceExpanded) {
+              setIsCartForceExpanded(true);
+              if (cartTimerRef.current) clearTimeout(cartTimerRef.current);
+              cartTimerRef.current = setTimeout(() => setIsCartForceExpanded(false), 3000);
+            } else {
+              setCheckoutModalVisible(true);
+            }
+          }}
+          onLongPress={() => {
+            if (cart.length > 0) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               setIsCartPeeking(true);
-            }}
-            onPressOut={() => {
-              if (isCartPeeking) {
-                setIsCartPeeking(false);
-              }
-            }}
-            activeOpacity={0.9}
-          >
-            <View style={styles.pillLeft}>
-              <View style={styles.itemCountBadge}>
-                <Text style={styles.itemCountText}>{cart.reduce((sum, item) => sum + item.qty, 0)}</Text>
-              </View>
-              <Text style={styles.pillLabel}>{cart.reduce((sum, item) => sum + item.qty, 0) === 1 ? 'Item' : 'Items'} Selected</Text>
-            </View>
-            <View style={styles.pillRight}>
-              <Text style={styles.pillTotal}>₱{total.toLocaleString()}</Text>
-              <View style={styles.pillAction}>
-                <ShoppingBag size={20} color="#FFF" />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+            }
+          }}
+          onPressOut={() => {
+            if (isCartPeeking) setIsCartPeeking(false);
+          }}
+          activeOpacity={0.85}
+        />
+      </Animated.View>
 
       {/* Floating Scan Button */}
-      <TouchableOpacity 
-        style={[
-          styles.scanFAB, 
-          cart.length > 0 && { bottom: 210 } // Lift it up when cart is visible
-        ]} 
-        onPress={startScanning}
-      >
-        <QrCode size={30} color="#FFF" />
-      </TouchableOpacity>
+      <Animated.View style={[styles.scanFAB, scanFabAnimStyle]}>
+        <TouchableOpacity 
+          style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
+          onPress={startScanning}
+        >
+          <QrCode size={30} color="#FFF" />
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* Manual Qty Modal (Cross-platform) */}
       <Modal visible={qtyModalVisible} transparent animationType="slide" onRequestClose={() => setQtyModalVisible(false)}>
@@ -1024,13 +1182,10 @@ export default function SellScreen() {
       </Modal>
 
       {/* Rapid-Fire Scanner Mode HUD */}
-      <Modal visible={isScanningMode} animationType="slide">
-        <SafeAreaView style={styles.scannerHUDContainer}>
+      <Modal visible={isScanningMode} animationType="slide" statusBarTranslucent={true}>
+        <View style={styles.scannerHUDContainer}>
           <View style={[styles.scannerHUDHeader, { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 50 : 40) }]}>
             <Text style={styles.scannerHUDTitle}>Rapid-Fire Scanner</Text>
-            <TouchableOpacity onPress={() => setIsScanningMode(false)} style={styles.closeHUDButton}>
-              <X size={28} color={Theme.colors.onSurface} />
-            </TouchableOpacity>
           </View>
 
           <View style={styles.cameraFrame}>
@@ -1061,23 +1216,23 @@ export default function SellScreen() {
               data={[...cart].reverse()}
               keyExtractor={(item) => item.productId}
               renderItem={({ item }) => (
-                <View key={item.productId} style={styles.cartItem}>
-                  <View style={styles.cartItemMain}>
-                    <Text style={styles.cartItemName} numberOfLines={1}>{item.productName}</Text>
-                    <View style={styles.cartItemPriceRow}>
-                      <Text style={styles.cartItemPrice}>₱{(item.priceAtSale * item.qty).toFixed(0)}</Text>
+                <View key={item.productId} style={styles.miniCartItem}>
+                  <View style={styles.miniItemMain}>
+                    <Text style={styles.miniItemName} numberOfLines={1}>{item.productName}</Text>
+                    <View style={styles.miniItemPriceRow}>
+                      <Text style={styles.miniItemPrice}>₱{(item.priceAtSale * item.qty).toFixed(0)}</Text>
                       {item.qty > 1 && (
-                         <Text style={styles.cartItemUnit}>₱{item.priceAtSale.toFixed(0)} / {item.isPack ? 'pack' : 'pc'}</Text>
+                         <Text style={styles.miniItemUnit}>₱{item.priceAtSale.toFixed(0)} / {item.isPack ? 'pack' : 'pc'}</Text>
                       )}
                     </View>
                   </View>
 
                   {/* Pack/Piece Toggle */}
                   <TouchableOpacity 
-                    style={[styles.unitToggle, item.isPack && styles.unitTogglePack]}
+                    style={[styles.miniUnitToggle, item.isPack && styles.miniUnitTogglePack]}
                     onPress={() => toggleItemPack(item.productId)}
                   >
-                    <Text style={[styles.unitToggleText, item.isPack && styles.unitToggleTextActive]}>
+                    <Text style={[styles.miniUnitToggleText, item.isPack && styles.miniUnitToggleTextActive]}>
                       {item.isPack ? 'PACK' : 'PC'}
                     </Text>
                   </TouchableOpacity>
@@ -1101,16 +1256,30 @@ export default function SellScreen() {
               }
             />
 
-            {cart.length > 0 && (
-              <TouchableOpacity style={styles.hudCheckoutBtn} onPress={() => setIsScanningMode(false)}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+              <TouchableOpacity 
+                style={[styles.hudCheckoutBtn, { flex: 1, backgroundColor: Theme.colors.surfaceVariant, marginTop: 0 }]} 
+                onPress={() => setIsScanningMode(false)}
+              >
+                <ChevronLeft size={20} color={Theme.colors.onSurface} />
+                <Text style={[styles.hudCheckoutText, { color: Theme.colors.onSurface }]}>Back</Text>
+              </TouchableOpacity>
+              
+              {cart.length > 0 && (
+                <TouchableOpacity 
+                  style={[styles.hudCheckoutBtn, { flex: 2, marginTop: 0 }]} 
+                  onPress={() => {
+                    setIsScanningMode(false);
+                    setTimeout(() => setCheckoutModalVisible(true), 150);
+                  }}
+                >
                   <Text style={styles.hudCheckoutText}>Done Scanning</Text>
                   <ChevronRight size={20} color="#FFF" />
-                </View>
-              </TouchableOpacity>
-            )}
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
 
       {/* Custom Alert Modal */}
@@ -1132,7 +1301,7 @@ export default function SellScreen() {
                   style={[styles.alertBtn, styles.alertCancelBtn]} 
                   onPress={() => setAlertVisible(false)}
                 >
-                  <Text style={styles.alertCancelBtnText}>Cancel</Text>
+                  <Text style={styles.alertCancelBtnText} numberOfLines={1} adjustsFontSizeToFit>Cancel</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity 
@@ -1146,7 +1315,7 @@ export default function SellScreen() {
                   if (alertConfig.onConfirm) alertConfig.onConfirm();
                 }}
               >
-                <Text style={styles.alertBtnText}>{alertConfig.confirmText || 'Got it'}</Text>
+                <Text style={styles.alertBtnText} numberOfLines={1} adjustsFontSizeToFit>{alertConfig.confirmText || 'Got it'}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -1186,27 +1355,93 @@ const styles = StyleSheet.create({
   },
   floatingCartContainer: {
     position: 'absolute',
-    bottom: 120, // Clearly above the floating tab bar
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: 20,
+    bottom: 120,
+    right: 24,
     zIndex: 100,
   },
+  floatingCartContainerEmpty: {
+    right: -36, // Tucked off-screen to form a semi-circle
+    width: 72,
+    height: 72,
+  },
+  floatingCartContainerEmptyExpanded: {
+    right: 20, // Fully visible on-screen
+    width: 72,
+  },
+  floatingCartContainerActive: {
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  floatingCartContainerCollapsed: {
+    right: 20,
+    alignItems: 'flex-end',
+  },
   floatingCartPill: {
+    backgroundColor: Theme.colors.primary,
     flexDirection: 'row',
-    backgroundColor: Theme.colors.primary, // Premium Boutique Green
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  floatingCartPillEmpty: {
+    width: 72,
+    borderRadius: 36,
+    justifyContent: 'flex-start', // Align horizontal to left
+    alignItems: 'center', // Align vertical to center
+    paddingLeft: 12, // Center the icon inside the visible 36px
+  },
+  floatingCartPillEmptyExpanded: {
+    width: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 0,
+  },
+  floatingCartPillActive: {
     width: '100%',
     height: 72,
     borderRadius: 36,
     paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'space-between',
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+  },
+  floatingCartPillCollapsed: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  collapsedBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: Theme.colors.tertiary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary,
+  },
+  collapsedBadgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  pillEmptyContent: {
+    width: 72,
+    height: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pillLeft: {
     flexDirection: 'row',
@@ -1312,7 +1547,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: Theme.colors.surfaceContainerHigh,
     marginRight: 10,
-    marginLeft: 16,
     borderWidth: 1,
     borderColor: Theme.colors.outlineVariant,
   },
@@ -1874,10 +2108,10 @@ const styles = StyleSheet.create({
   // Shortcuts Style
   topProductsSection: {
     paddingVertical: 12,
-    paddingLeft: 16,
     backgroundColor: Theme.colors.background,
   },
   topProductsScroll: {
+    paddingLeft: 16,
     paddingRight: 16,
     gap: 12,
   },
@@ -1887,6 +2121,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     letterSpacing: 1.5,
     marginBottom: 10,
+    paddingLeft: 16,
     textTransform: 'uppercase',
   },
   shortcutCard: {
@@ -1941,15 +2176,15 @@ const styles = StyleSheet.create({
   },
   scanFAB: {
     position: 'absolute',
-    bottom: 110, // Clearly above floating tab bar
-    right: 30,
+    bottom: 204, // Perfectly stacked above the cart button
+    right: 20,
     backgroundColor: Theme.colors.primary,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
+    elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -2048,10 +2283,28 @@ const styles = StyleSheet.create({
     borderColor: Theme.colors.outlineVariant + '30',
   },
   miniItemName: {
-    flex: 1,
     fontFamily: Theme.typography.bodyBold,
     fontSize: 14,
     color: Theme.colors.onSurface,
+  },
+  miniItemMain: {
+    flex: 1,
+    marginRight: 8,
+  },
+  miniItemPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  miniItemPrice: {
+    color: Theme.colors.primary,
+    fontFamily: Theme.typography.headlineBlack,
+    fontSize: 12,
+  },
+  miniItemUnit: {
+    color: Theme.colors.outline,
+    fontFamily: Theme.typography.bodyMedium,
+    fontSize: 10,
   },
   miniControls: {
     flexDirection: 'row',
@@ -2061,9 +2314,36 @@ const styles = StyleSheet.create({
   miniItemQty: {
     fontFamily: Theme.typography.headlineBlack,
     fontSize: 20,
-    color: Theme.colors.primary, // Back to Emerald/Primary for visibility
+    color: Theme.colors.primary, 
     minWidth: 30,
     textAlign: 'center',
+  },
+  miniUnitToggle: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  miniUnitTogglePack: {
+    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  miniUnitToggleText: {
+    fontFamily: Theme.typography.headlineBlack,
+    fontSize: 9,
+    color: Theme.colors.outline,
+    letterSpacing: 0.5,
+  },
+  miniUnitToggleTextActive: {
+    color: '#FFF',
   },
   emptyHUDCart: {
     flex: 1,
@@ -2112,14 +2392,10 @@ const styles = StyleSheet.create({
   },
   alertBtn: {
     width: '100%',
-    paddingVertical: 16,
-    borderRadius: 28, // Pill shape
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   alertActionRow: {
     flexDirection: 'row',
@@ -2134,12 +2410,16 @@ const styles = StyleSheet.create({
     fontFamily: Theme.typography.headlineBlack,
     color: Theme.colors.outline,
     fontSize: 16,
+    includeFontPadding: false,
+    paddingTop: 2,
   },
   alertBtnText: {
     fontFamily: Theme.typography.headlineBlack,
     color: '#FFF',
     fontSize: 16,
     letterSpacing: 0.5,
+    includeFontPadding: false,
+    paddingTop: 2,
   },
   hudCheckoutBtn: {
     backgroundColor: Theme.colors.primary,
@@ -2155,6 +2435,7 @@ const styles = StyleSheet.create({
     fontFamily: Theme.typography.headlineBlack,
     color: '#FFF',
     fontSize: 16,
+    paddingTop: 2,
   },
   lightingHintFloating: {
     position: 'absolute',
@@ -2264,11 +2545,11 @@ const styles = StyleSheet.create({
   },
   // Empty States
   emptyStateContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 80,
     paddingHorizontal: 40,
+    paddingBottom: 40,
   },
   emptyIconCircle: {
     width: 100,
@@ -2280,18 +2561,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   emptyStateTitle: {
-    fontFamily: Theme.typography.headlineBlack,
     fontSize: 20,
-    color: Theme.colors.onSurface,
+    color: '#000',
     textAlign: 'center',
     marginBottom: 8,
   },
   emptyStateSub: {
-    fontFamily: Theme.typography.bodyMedium,
     fontSize: 15,
-    color: Theme.colors.outline,
+    color: '#666',
     textAlign: 'center',
-    lineHeight: 22,
     marginBottom: 32,
   },
   emptyStateBtn: {
@@ -2306,9 +2584,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   emptyStateBtnText: {
-    fontFamily: Theme.typography.headlineBlack,
     color: '#FFF',
-    fontSize: 14,
+    fontSize: 16,
   },
   cartPeekExtension: {
     position: 'absolute',

@@ -73,7 +73,7 @@ export default async function handler(req, res) {
     }
 
     const body = await parseBody(req);
-    const { deviceId, storeName } = body;
+    const { deviceId, ownerName } = body;
     
     if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
 
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
     // 1. Log the trial attempt
     const logEntry = JSON.stringify({ 
       deviceId, 
-      storeName: storeName || 'New Store', 
+      ownerName: ownerName || 'New Store', 
       date: new Date().toISOString() 
     });
 

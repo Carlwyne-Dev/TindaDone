@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TindaDone Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1a6b45;
+      --primary-light: #e8f5ee;
+      --surface: #ffffff;
+      --bg: #f4f7f5;
+      --text: #1a2e24;
+      --text-muted: #6b8f7a;
+      --border: #d4e8db;
+      --danger: #dc2626;
+      --danger-bg: #fef2f2;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --warning: #d97706;
+      --warning-bg: #fffbeb;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(26,107,69,0.08);
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Login */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f3d26 0%, #1a6b45 100%);
+    }
+    .login-card {
+      background: var(--surface);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .login-logo {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+    .login-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+    .login-label {
+      display: block;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .login-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--bg);
+      margin-bottom: 20px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-input:focus { border-color: var(--primary); }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .login-error {
+      margin-top: 14px;
+      color: var(--danger);
+      font-size: 13px;
+      display: none;
+    }
+
+    /* App shell */
+    #app { display: none; }
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .topbar-brand { font-size: 18px; font-weight: 800; color: var(--primary); letter-spacing: -.5px; }
+    .topbar-brand span { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+    .logout-btn {
+      padding: 8px 18px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .main { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* Stats row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .stat-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .stat-value { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .stat-value.danger { color: var(--danger); }
+    .stat-value.warn { color: var(--warning); }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; width: fit-content; }
+    .tab-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all .2s;
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+
+    /* Table */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .table-header {
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      z-index: 20;
+    }
+    .table-responsive {
+      max-height: 500px; /* ~7-8 items before scrolling */
+      overflow-y: auto;
+    }
+    .table-title { font-size: 15px; font-weight: 700; }
+    .search-input {
+      padding: 8px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      width: 220px;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 12px 20px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    td {
+      padding: 14px 20px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--primary-light); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-active { background: var(--success-bg); color: var(--success); }
+    .badge-expired { background: var(--danger-bg); color: var(--danger); }
+    .badge-trial { background: var(--warning-bg); color: var(--warning); }
+    .badge-revoked { background: #f3f4f6; color: #6b7280; }
+
+    .action-btn {
+      padding: 5px 12px;
+      border-radius: 7px;
+      border: none;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .action-btn:hover { opacity: .8; }
+    .btn-revoke { background: var(--danger-bg); color: var(--danger); }
+    .btn-restore { background: var(--success-bg); color: var(--success); }
+    .btn-delete { background: #f3f4f6; color: #6b7280; margin-left: 4px; }
+
+    /* Add key form */
+    .add-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .add-form h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+    .form-group label { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--text-muted); }
+    .form-group input, .form-group select {
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    .add-btn {
+      align-self: flex-end;
+      padding: 10px 24px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .add-btn:hover { opacity: .88; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s ease;
+      z-index: 999;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { background: var(--danger); }
+
+    .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 14px; }
+
+    .loading-row td { text-align: center; color: var(--text-muted); font-style: italic; }
+
+    @media (max-width: 600px) {
+      .topbar { padding: 0 16px; }
+      .main { padding: 16px; }
+      .form-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">TindaDone</div>
+    <div class="login-sub">Admin Command Center</div>
+    <label class="login-label">Admin Password</label>
+    <input id="pwd-input" type="password" class="login-input" placeholder="Enter password..." />
+    <button class="btn-primary" onclick="login()">Access Dashboard</button>
+    <div id="login-error" class="login-error">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">TindaDone <span>Admin Panel</span></div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="main">
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Keys</div><div class="stat-value" id="s-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">Activated</div><div class="stat-value" id="s-activated">—</div></div>
+      <div class="stat-card"><div class="stat-label">Revoked</div><div class="stat-value danger" id="s-revoked">—</div></div>
+      <div class="stat-card"><div class="stat-label">Trial Users</div><div class="stat-value warn" id="s-trials">—</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('keys')">License Keys</button>
+      <button class="tab-btn" onclick="switchTab('trials')">Trial Users</button>
+    </div>
+
+    <!-- KEYS TAB -->
+    <div id="tab-keys">
+      <div class="add-form">
+        <h3>➕ Add New License Key</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>License Key</label>
+            <input id="new-key" type="text" placeholder="TD-XXXX-XXXX-XXXX" />
+          </div>
+          <div class="form-group">
+            <label>Note (optional)</label>
+            <input id="new-note" type="text" placeholder="e.g. Customer name" />
+          </div>
+          <button class="add-btn" onclick="addKey()">Add Key</button>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">License Keys</div>
+          <input class="search-input" type="text" placeholder="Search keys..." oninput="filterKeys(this.value)" />
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Key / Code</th>
+                <th>Status</th>
+                <th>Device ID</th>
+                <th>Activated At</th>
+                <th>Note</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="keys-body">
+              <tr class="loading-row"><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIALS TAB -->
+    <div id="tab-trials" style="display:none">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Trial Users</div>
+          <input class="search-input" type="text" placeholder="Search trials..." oninput="filterTrials(this.value)" />
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Device ID</th>
+                <th>Owner Name</th>
+                <th>Started</th>
+                <th>Expires</th>
+                <th>Days Left</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="trials-body">
+              <tr class="loading-row"><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let PASSWORD = '';
+  let allKeys = [];
+  let allTrials = [];
+
+  // ── Auth ──────────────────────────────────────────────────────
+  function login() {
+    const pwd = document.getElementById('pwd-input').value.trim();
+    if (!pwd) return;
+    PASSWORD = pwd;
+    document.getElementById('login-error').style.display = 'none';
+    loadAll();
+  }
+
+  document.getElementById('pwd-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  function logout() {
+    PASSWORD = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('pwd-input').value = '';
+  }
+
+  // ── API helpers ───────────────────────────────────────────────
+  async function api(path, opts = {}) {
+    const res = await fetch(path, opts);
+    if (res.status === 401) throw new Error('AUTH_FAILED');
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // ── Load everything ───────────────────────────────────────────
+  async function loadAll() {
+    try {
+      const [keysData, trialsData] = await Promise.all([
+        api(`/api/history?password=${encodeURIComponent(PASSWORD)}`),
+        api(`/api/trial-list?password=${encodeURIComponent(PASSWORD)}`),
+      ]);
+
+      allKeys = Array.isArray(keysData.history) ? keysData.history : [];
+      allTrials = Array.isArray(trialsData.logs) ? trialsData.logs : [];
+
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+
+      renderStats();
+      renderKeys(allKeys);
+      renderTrials(allTrials);
+    } catch (e) {
+      if (e.message === 'AUTH_FAILED') {
+        document.getElementById('login-error').style.display = 'block';
+        PASSWORD = '';
+      } else {
+        showToast('Failed to load data: ' + e.message, true);
+      }
+    }
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────
+  function renderStats() {
+    document.getElementById('s-total').textContent = allKeys.length;
+    document.getElementById('s-activated').textContent = allKeys.filter(k => k.activated && !k.revoked).length;
+    document.getElementById('s-revoked').textContent = allKeys.filter(k => k.revoked).length;
+    document.getElementById('s-trials').textContent = allTrials.length;
+  }
+
+  // ── Keys ──────────────────────────────────────────────────────
+  function renderKeys(keys) {
+    const tbody = document.getElementById('keys-body');
+    if (!keys.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No license keys yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = keys.map(k => {
+      const keyVal = k.key || k.code || '—';
+      const deviceId = k.activatedDeviceId || k.deviceId || '—';
+      const activatedAt = k.activatedAt ? new Date(k.activatedAt).toLocaleString() : '—';
+      const note = k.note || k.ownerName || k.storeName || '—';
+      let statusBadge = '<span class="badge badge-revoked">Unused</span>';
+      if (k.revoked) statusBadge = '<span class="badge badge-expired">Revoked</span>';
+      else if (k.activated) statusBadge = '<span class="badge badge-active">Activated</span>';
+
+      const revokeBtn = k.revoked
+        ? `<button class="action-btn btn-restore" onclick="revokeKey('${keyVal}', false)">Restore</button>`
+        : `<button class="action-btn btn-revoke" onclick="revokeKey('${keyVal}', true)">Revoke</button>`;
+      const deleteBtn = `<button class="action-btn btn-delete" onclick="deleteKey('${k.ts || keyVal}')">Delete</button>`;
+
+      return `<tr>
+        <td><code style="font-size:12px;background:var(--bg);padding:3px 7px;border-radius:5px">${keyVal}</code></td>
+        <td>${statusBadge}</td>
+        <td style="font-family:monospace;font-size:12px;color:var(--text-muted)">${deviceId.slice(0,20)}${deviceId.length > 20 ? '…' : ''}</td>
+        <td style="color:var(--text-muted);font-size:12px">${activatedAt}</td>
+        <td>${note}</td>
+        <td>${revokeBtn}${deleteBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterKeys(q) {
+    const filtered = allKeys.filter(k =>
+      JSON.stringify(k).toLowerCase().includes(q.toLowerCase())
+    );
+    renderKeys(filtered);
+  }
+
+  async function addKey() {
+    const keyVal = document.getElementById('new-key').value.trim().toUpperCase();
+    const note = document.getElementById('new-note').value.trim();
+    if (!keyVal) return showToast('Enter a license key', true);
+
+    const entry = {
+      key: keyVal,
+      code: keyVal,
+      note,
+      ts: Date.now(),
+      activated: false,
+      revoked: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await api('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: PASSWORD, entry }),
+      });
+      document.getElementById('new-key').value = '';
+      document.getElementById('new-note').value = '';
+      showToast('Key added successfully!');
+      loadAll();
+    } catch (e) { showToast('Failed: ' + e.message, true); }
+  }
+
+  async function revokeKey(keyVal, revoke) {
+    try {
+      await api('/api/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: PASSWORD, deviceId: keyVal, revoke }),
+      });
+      showToast(revoke ? 'Key revoked.' : 'Key restored.');
+      loadAll();
+    } catch (e) { showToast('Failed: ' + e.message, true); }
+  }
+
+  async function deleteKey(ts) {
+    if (!confirm('Delete this key permanently?')) return;
+    try {
+      await api('/api/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: PASSWORD, ts: parseInt(ts) }),
+      });
+      showToast('Key deleted.');
+      loadAll();
+    } catch (e) { showToast('Failed: ' + e.message, true); }
+  }
+
+  // ── Trials ────────────────────────────────────────────────────
+  function renderTrials(trials) {
+    const tbody = document.getElementById('trials-body');
+    if (!trials.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No trial users yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = trials.map(t => {
+      const deviceId = t.deviceId || '—';
+      const ownerName = t.ownerName || t.storeName || '—';
+      const started = t.date ? new Date(t.date).toLocaleString() : '—';
+      const expires = t.expiresAt ? new Date(t.expiresAt).toLocaleString() : '—';
+      const daysLeft = t.daysLeft ?? '—';
+      let statusBadge = t.isExpired
+        ? '<span class="badge badge-expired">Expired</span>'
+        : '<span class="badge badge-trial">Active Trial</span>';
+
+      return `<tr>
+        <td style="font-family:monospace;font-size:12px">${deviceId}</td>
+        <td>${ownerName}</td>
+        <td style="color:var(--text-muted);font-size:12px">${started}</td>
+        <td style="color:var(--text-muted);font-size:12px">${expires}</td>
+        <td style="font-weight:700;color:${t.isExpired ? 'var(--danger)' : 'var(--success)'}">${daysLeft}d</td>
+        <td>${statusBadge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterTrials(q) {
+    const filtered = allTrials.filter(t =>
+      JSON.stringify(t).toLowerCase().includes(q.toLowerCase())
+    );
+    renderTrials(filtered);
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────
+  function switchTab(name) {
+    document.getElementById('tab-keys').style.display = name === 'keys' ? 'block' : 'none';
+    document.getElementById('tab-trials').style.display = name === 'trials' ? 'block' : 'none';
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0) === (name === 'keys'));
+    });
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3000);
+  }
+</script>
+</body>
+</html>

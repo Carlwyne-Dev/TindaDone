@@ -23,20 +23,18 @@ import {
   TrialStatus 
 } from '../lib/license';
 import { getBusinessSettings, saveBusinessSettings } from '../lib/storage';
-import { useSettings } from '../context/SettingsContext';
 import { Theme } from '../constants/Theme';
 import { CheckCircle2, Lock, Play, Clock, AlertTriangle } from 'lucide-react-native';
 
 export default function ActivateScreen() {
   const router = useRouter();
-  const { updateSettings } = useSettings();
   const [deviceCode, setDeviceCode] = useState('');
   const [activationKey, setActivationKey] = useState('');
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [trial, setTrial] = useState<TrialStatus | null>(null);
-  const [storeName, setStoreName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [pendingSuccessType, setPendingSuccessType] = useState<'trial' | 'key' | null>(null);
@@ -49,7 +47,7 @@ export default function ActivateScreen() {
     const init = async () => {
       const code = await generateDeviceCode();
       const settings = await getBusinessSettings();
-      if (settings.storeName) setStoreName(settings.storeName);
+      if (settings.ownerName) setOwnerName(settings.ownerName);
 
       setLoading(true);
       
@@ -109,12 +107,12 @@ export default function ActivateScreen() {
     }, 3000);
   };
 
-  const persistStoreName = async () => {
+  const persistOwnerName = async () => {
     try {
       const settings = await getBusinessSettings();
-      await updateSettings({ ...settings, storeName: storeName.trim() });
+      await saveBusinessSettings({ ...settings, ownerName: ownerName.trim() });
     } catch (e) {
-      console.error('Failed to save store name to settings:', e);
+      console.error('Failed to save owner name to settings:', e);
     }
   };
 
@@ -146,7 +144,7 @@ export default function ActivateScreen() {
   };
 
   const handleFinalizeOnboarding = async () => {
-    if (!storeName.trim()) {
+    if (!ownerName.trim()) {
       Vibration.vibrate();
       shake();
       return;
@@ -156,7 +154,7 @@ export default function ActivateScreen() {
     try {
       if (pendingSuccessType === 'trial') {
         // TRIAL Handshake with the REAL name now
-        const result = await startTrial(storeName.trim());
+        const result = await startTrial(ownerName.trim());
         if (!result.success) {
           showNotification(result.error || 'Connection error. Try Again.');
           setVerifying(false);
@@ -168,7 +166,7 @@ export default function ActivateScreen() {
       }
 
       // Save locally to Settings
-      await persistStoreName();
+      await persistOwnerName();
       
       setShowNameModal(false);
       router.replace('/(tabs)/sell');
@@ -321,17 +319,17 @@ export default function ActivateScreen() {
             <Text style={styles.modalTitle}>Perfect!</Text>
             <Text style={styles.modalSub}>
               {pendingSuccessType === 'key' ? 'License verified' : 'Trial access granted'}. 
-              Enter your official store name to begin.
+              What should we call you?
             </Text>
 
             <View style={[styles.inputSuite, { marginBottom: 24 }]}>
-              <Text style={styles.inputLabel}>STORE NAME</Text>
+              <Text style={styles.inputLabel}>YOUR NAME</Text>
               <TextInput
                 style={[styles.keyInput, { fontSize: 18, textAlign: 'center', letterSpacing: 0, paddingHorizontal: 20 }]}
-                placeholder="e.g. Aling Nena's Boutique"
+                placeholder="e.g. Maria, Juan, Aling Nena"
                 placeholderTextColor={Theme.colors.outlineVariant}
-                value={storeName}
-                onChangeText={setStoreName}
+                value={ownerName}
+                onChangeText={setOwnerName}
                 autoFocus
               />
             </View>
