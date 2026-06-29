@@ -162,7 +162,7 @@ export default function ActivateScreen() {
         }
       } else {
         // ACTIVATION Persistence
-        await saveActivation(activationKey);
+        await saveActivation(activationKey, ownerName.trim());
       }
 
       // Save locally to Settings

@@ -93,7 +93,7 @@ export async function isActivated(): Promise<boolean> {
 }
 
 /** Permanently marks this device as activated and reports it to the cloud */
-export async function saveActivation(licenseKey?: string): Promise<void> {
+export async function saveActivation(licenseKey?: string, ownerName?: string): Promise<void> {
   try {
     await AsyncStorage.setItem(ACTIVATION_STORAGE_KEY, 'true');
     
@@ -103,7 +103,7 @@ export async function saveActivation(licenseKey?: string): Promise<void> {
       fetch(`${API_BASE_URL}/api/activate-key`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ licenseKey, deviceId })
+        body: JSON.stringify({ licenseKey, deviceId, ownerName })
       }).catch(e => console.log('Activation report skipped', e));
     }
   } catch (e) {

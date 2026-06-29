@@ -356,7 +356,14 @@ export default function SellScreen() {
     const updated = { ...businessSettings, ownerName: ownerName.trim() };
     await updateSettings(updated);
     await markWelcomeAsSeen();
-    showAlert('All Set!', `Welcome to TindaDone, ${ownerName.trim()}! 🎉`, 'success');
+    
+    // Alert the user with instructions for testing
+    Alert.alert(
+      'All Set!',
+      `Welcome to TindaDone, ${ownerName.trim()}! 🎉\n\nWant to test the app before using it? Go to the Settings tab and turn on "Seed Demo Data" to load sample products and sales.`,
+      [{ text: 'Got it!' }]
+    );
+    setShowWelcome(false);
   };
 
   const checkLicense = async () => {
@@ -959,9 +966,9 @@ export default function SellScreen() {
       </Animated.View>
 
       {/* Manual Qty Modal (Cross-platform) */}
-      <Modal visible={qtyModalVisible} transparent animationType="slide" onRequestClose={() => setQtyModalVisible(false)}>
+      <Modal visible={qtyModalVisible} transparent animationType="fade" onRequestClose={() => setQtyModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.qtyModalContent}>
             <Text style={styles.qtyModalTitle}>Set Quantity</Text>
             <Text style={styles.qtyModalSub}>{editingItem?.productName}</Text>
@@ -987,9 +994,9 @@ export default function SellScreen() {
       </Modal>
 
       {/* Checkout Summary Modal */}
-      <Modal visible={checkoutModalVisible} transparent animationType="slide" onRequestClose={() => setCheckoutModalVisible(false)}>
+      <Modal visible={checkoutModalVisible} transparent animationType="fade" onRequestClose={() => setCheckoutModalVisible(false)}>
         <View style={styles.sheetOverlay}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.checkoutModalContent}>
             <View style={styles.dialogHeader}>
               <Text style={styles.dialogTitle}>Complete Sale</Text>
@@ -1118,7 +1125,7 @@ export default function SellScreen() {
       {/* Utang Customer Name Modal */}
       <Modal visible={utangModalVisible} transparent animationType="fade" onRequestClose={() => setUtangModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.utangPromptCard}>
             <Text style={styles.utangPromptTitle}>Customer Name</Text>
             <Text style={styles.utangPromptSub}>Who is this debt for?</Text>
@@ -1161,9 +1168,9 @@ export default function SellScreen() {
       </Modal>
 
       {/* Welcome Modal */}
-      <Modal visible={showWelcome} transparent animationType="slide" onRequestClose={() => setShowWelcome(false)}>
+      <Modal visible={showWelcome} transparent animationType="fade" onRequestClose={() => setShowWelcome(false)}>
         <View style={styles.welcomeOverlay}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.welcomeCard}>
             <Rocket size={64} color={Theme.colors.primary} style={{ marginBottom: 20 }} />
             <Text style={styles.welcomeTitle}>Welcome to TindaDone!</Text>
@@ -1182,7 +1189,7 @@ export default function SellScreen() {
       </Modal>
 
       {/* Rapid-Fire Scanner Mode HUD */}
-      <Modal visible={isScanningMode} animationType="slide" statusBarTranslucent={true}>
+      <Modal visible={isScanningMode} animationType="fade" statusBarTranslucent={true}>
         <View style={styles.scannerHUDContainer}>
           <View style={[styles.scannerHUDHeader, { paddingTop: Math.max(insets.top, Platform.OS === 'android' ? 50 : 40) }]}>
             <Text style={styles.scannerHUDTitle}>Rapid-Fire Scanner</Text>

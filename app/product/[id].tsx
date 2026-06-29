@@ -12,7 +12,8 @@ import {
   Vibration,
   Dimensions,
   Alert,
-  ActionSheetIOS
+  ActionSheetIOS,
+  LayoutAnimation
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -624,7 +625,7 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* Restock Modal */}
-      <Modal visible={restockVisible} transparent animationType="slide" onRequestClose={() => setRestockVisible(false)}>
+      <Modal visible={restockVisible} transparent animationType="fade" onRequestClose={() => setRestockVisible(false)}>
         <View style={styles.modalOverlay}>
           <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
           <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={() => setRestockVisible(false)} />
@@ -640,14 +641,20 @@ export default function ProductDetailScreen() {
             <View style={styles.typeSelector}>
               <TouchableOpacity 
                 style={[styles.typeBtn, !isPackRestock && styles.typeBtnActive]}
-                onPress={() => setIsPackRestock(false)}
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setIsPackRestock(false);
+                }}
               >
                 <Tag size={18} color={!isPackRestock ? '#FFF' : Theme.colors.outline} />
                 <Text style={[styles.typeBtnText, !isPackRestock && styles.typeBtnTextActive]}>Single Item</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.typeBtn, isPackRestock && styles.typeBtnActive]}
-                onPress={() => setIsPackRestock(true)}
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setIsPackRestock(true);
+                }}
               >
                 <Package size={18} color={isPackRestock ? '#FFF' : Theme.colors.outline} />
                 <Text style={[styles.typeBtnText, isPackRestock && styles.typeBtnTextActive]}>Bulk Packs</Text>
@@ -773,6 +780,10 @@ export default function ProductDetailScreen() {
               </>
             )}
 
+            <Text style={{ fontSize: 12, color: Theme.colors.outline, marginTop: 4, marginBottom: 12, fontStyle: 'italic', paddingHorizontal: 4 }}>
+              *Auto-calculated prices are just suggestions. You can edit them freely!
+            </Text>
+
             {/* Profit Margin Visual */}
             {(() => {
               const sellPrice = parseFloat(restockPrice) || 0;
@@ -820,9 +831,9 @@ export default function ProductDetailScreen() {
       </Modal>
 
       {/* Edit Product Modal */}
-      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={() => setEditVisible(false)}>
+      <Modal visible={editVisible} transparent animationType="fade" onRequestClose={() => setEditVisible(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <TouchableOpacity activeOpacity={1} style={StyleSheet.absoluteFill} onPress={() => setEditVisible(false)} />
           <View style={styles.modalCard}>
              <View style={styles.modalHeader}>
@@ -836,14 +847,20 @@ export default function ProductDetailScreen() {
               <View style={styles.typeSelector}>
                 <TouchableOpacity 
                   style={[styles.typeBtn, !isBulkMode && styles.typeBtnActive]}
-                  onPress={() => setIsBulkMode(false)}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsBulkMode(false);
+                  }}
                 >
                   <Tag size={18} color={!isBulkMode ? '#FFF' : Theme.colors.outline} />
                   <Text style={[styles.typeBtnText, !isBulkMode && styles.typeBtnTextActive]}>Single Item</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.typeBtn, isBulkMode && styles.typeBtnActive]}
-                  onPress={() => setIsBulkMode(true)}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsBulkMode(true);
+                  }}
                 >
                   <Package size={18} color={isBulkMode ? '#FFF' : Theme.colors.outline} />
                   <Text style={[styles.typeBtnText, isBulkMode && styles.typeBtnTextActive]}>Bulk Packs</Text>
@@ -957,6 +974,10 @@ export default function ProductDetailScreen() {
                 )}
               </View>
 
+              <Text style={{ fontSize: 12, color: Theme.colors.outline, marginTop: 4, marginBottom: 12, fontStyle: 'italic', paddingHorizontal: 4 }}>
+                *Auto-calculated prices are just suggestions. You can edit them freely!
+              </Text>
+
               <View style={styles.insightBox}>
                 {getDashboardData().uMargin && (
                   <View style={styles.insightRow}>
@@ -1043,7 +1064,7 @@ export default function ProductDetailScreen() {
       {/* Log Detail Modal */}
       <Modal visible={detailVisible} transparent animationType="fade" onRequestClose={() => { setDetailVisible(false); setShowFullData(false); }}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <TouchableOpacity 
             activeOpacity={1} 
             style={StyleSheet.absoluteFill} 
@@ -1136,7 +1157,7 @@ export default function ProductDetailScreen() {
       {/* Delete Confirmation Modal */}
       <Modal visible={deleteVisible} transparent animationType="fade" onRequestClose={() => setDeleteVisible(false)}>
         <View style={styles.centeredModalOverlay}>
-          <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.centeredModalCard}>
             <Text style={styles.modalTitle}>Delete Product</Text>
             <Text style={styles.deleteDesc}>Are you sure you want to delete "{product.name}"? This action cannot be undone.</Text>
@@ -1177,7 +1198,7 @@ export default function ProductDetailScreen() {
       {/* Custom Alert Modal */}
       <Modal visible={alertVisible} transparent animationType="fade" onRequestClose={() => setAlertVisible(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.alertCard}>
             {alertConfig.type === 'success' && <CheckCircle2 size={48} color={Theme.colors.primary} style={styles.alertIcon} />}
             {alertConfig.type === 'error' && <X size={48} color={Theme.colors.tertiary} style={styles.alertIcon} />}

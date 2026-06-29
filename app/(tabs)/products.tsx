@@ -14,7 +14,8 @@ import {
   InteractionManager,
   Platform,
   ActionSheetIOS,
-  Vibration
+  Vibration,
+  LayoutAnimation
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -581,9 +582,9 @@ export default function ProductsScreen() {
       </TouchableOpacity>
 
       {/* Add Product Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={100} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.modalContent}>
           <View style={styles.modalIndicator} />
           <View style={styles.modalHeader}>
@@ -597,14 +598,20 @@ export default function ProductsScreen() {
               <View style={styles.typeSelector}>
                 <TouchableOpacity 
                   style={[styles.typeBtn, !isBulkMode && styles.typeBtnActive]}
-                  onPress={() => setIsBulkMode(false)}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsBulkMode(false);
+                  }}
                 >
                   <Tag size={18} color={!isBulkMode ? '#FFF' : Theme.colors.outline} />
                   <Text style={[styles.typeBtnText, !isBulkMode && styles.typeBtnTextActive]}>Single Item</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.typeBtn, isBulkMode && styles.typeBtnActive]}
-                  onPress={() => setIsBulkMode(true)}
+                  onPress={() => {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    setIsBulkMode(true);
+                  }}
                 >
                   <Package size={18} color={isBulkMode ? '#FFF' : Theme.colors.outline} />
                   <Text style={[styles.typeBtnText, isBulkMode && styles.typeBtnTextActive]}>Bulk Packs</Text>
@@ -775,6 +782,12 @@ export default function ProductsScreen() {
                  />
                </View>
              </View>
+
+             {isBulkMode && (
+               <Text style={{ fontSize: 12, color: Theme.colors.outline, marginTop: -8, marginBottom: 12, fontStyle: 'italic', paddingHorizontal: 4 }}>
+                 *Auto-calculated prices are just suggestions. You can edit them freely!
+               </Text>
+             )}
 
              {/* Dashboard Summary */}
              <View style={styles.insightBox}>

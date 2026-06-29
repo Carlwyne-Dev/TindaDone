@@ -369,10 +369,18 @@
         <h3>➕ Add New License Key</h3>
         <div class="form-row">
           <div class="form-group">
-            <label>User Name</label>
+            <label>Customer Device ID</label>
+            <input id="new-device" type="text" placeholder="TD-XXXX-XXXX" />
+          </div>
+          <div class="form-group">
+            <label>Owner Name</label>
             <input id="new-user" type="text" placeholder="e.g. John Doe" />
           </div>
-          <button class="add-btn" onclick="addKey()">Add Key</button>
+          <div class="form-group">
+            <label>Generated Key</label>
+            <input id="new-key" type="text" readonly placeholder="Will appear here..." style="background:var(--bg); cursor:pointer;" onclick="if(this.value) { navigator.clipboard.writeText(this.value); showToast('Key copied to clipboard!'); }" title="Click to copy" />
+          </div>
+          <button class="add-btn" onclick="addKey()">Generate & Activate</button>
         </div>
       </div>
       <div class="table-card">
@@ -388,7 +396,7 @@
                 <th>Status</th>
                 <th>Device ID</th>
                 <th>Activated At</th>
-                <th>User Name</th>
+                <th>Owner Name</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -538,27 +546,34 @@
     renderKeys(filtered);
   }
 
-  function generateKey() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let res = 'TD-';
-    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-    res += '-';
-    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-    res += '-';
-    for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
-    return res;
+  function generateActivationKey(deviceCode) {
+    let cleanVal = deviceCode.toUpperCase().replace(/^TD-/, '').replace(/^TD/, '');
+    cleanVal = cleanVal.replace(/[^A-Z0-9]/g, '');
+
+    const salt = "TindaDone-Premium-2026";
+    let hash = 0;
+    const combined = cleanVal + salt;
+    
+    for (let i = 0; i < combined.length; i++) {
+      hash = ((hash << 5) - hash) + combined.charCodeAt(i);
+      hash |= 0;
+    }
+    
+    const part1 = Math.abs(hash).toString(36).toUpperCase().substring(0, 4);
+    return `TD-${part1}-${cleanVal.substring(0, 4)}`;
   }
 
   async function addKey() {
+    const deviceCode = document.getElementById('new-device').value.trim().toUpperCase();
     const userName = document.getElementById('new-user').value.trim();
-    if (!userName) return showToast('Enter a User Name', true);
-    
-    const keyVal = generateKey();
+    if (!deviceCode) return showToast('Enter the Customer Device ID', true);
+
+    const generatedKey = generateActivationKey(deviceCode);
 
     const entry = {
-      key: keyVal,
-      code: keyVal,
-      note: userName,
+      key: generatedKey,
+      code: deviceCode,
+      note: userName || 'Unknown User',
       ts: Date.now(),
       activated: false,
       revoked: false,
@@ -571,8 +586,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: PASSWORD, entry }),
       });
+      
+      const keyInput = document.getElementById('new-key');
+      keyInput.value = generatedKey;
+      document.getElementById('new-device').value = '';
       document.getElementById('new-user').value = '';
-      showToast('Key added successfully!');
+      
+      showToast('Key generated successfully! Click it to copy.');
       loadAll();
     } catch (e) { showToast('Failed: ' + e.message, true); }
   }

@@ -371,13 +371,13 @@ export default function TabLayout() {
 
     <Modal
       visible={isSettingsOpen}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       onRequestClose={() => setIsSettingsOpen(false)}
       onShow={checkDemoStatus}
     >
       <View style={styles.modalOverlay}>
-        <BlurView intensity={100} tint="light" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
         <View style={styles.modalContent}>
           <View style={styles.modalIndicator} />
           <View style={styles.modalHeader}>

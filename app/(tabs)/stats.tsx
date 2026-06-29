@@ -523,9 +523,9 @@ export default function StatsScreen() {
       </ScrollView>
 
       {/* Daily Closeout Modal */}
-      <Modal visible={showCloseout} transparent animationType="slide" onShow={() => setShowScrollHint(true)} onRequestClose={() => setShowCloseout(false)}>
+      <Modal visible={showCloseout} transparent animationType="fade" onShow={() => setShowScrollHint(true)} onRequestClose={() => setShowCloseout(false)}>
         <View style={styles.modalOverlay}>
-          <BlurView intensity={100} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={25} tint="light" style={StyleSheet.absoluteFill} />
           <View style={styles.summaryCard}>
             <ScrollView
               showsVerticalScrollIndicator={false}

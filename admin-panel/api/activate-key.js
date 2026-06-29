@@ -43,8 +43,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  const { licenseKey, deviceId } = req.body;
+  const { licenseKey, deviceId, ownerName } = req.body;
   const env = getKVEnv();
   if (!env.url || !env.token) return res.status(503).json({ success: false, error: 'Service unavailable: database not configured.' });
 
@@ -56,7 +55,13 @@ module.exports = async function handler(req, res) {
     let foundEntry = null;
     history = history.map(h => {
       if (h.key === licenseKey || h.code === licenseKey) {
-        foundEntry = { ...h, activated: true, activatedDeviceId: deviceId, activatedAt: new Date().toLocaleString() };
+        foundEntry = { 
+          ...h, 
+          activated: true, 
+          activatedDeviceId: deviceId, 
+          activatedAt: new Date().toLocaleString(),
+          note: ownerName || h.note // Update owner name if provided by client
+        };
         return foundEntry;
       }
       return h;
