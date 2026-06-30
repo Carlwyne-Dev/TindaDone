@@ -339,7 +339,7 @@ export default function ActivateScreen() {
             ) : (
               <>
                 <Play size={18} color={Theme.colors.primary} />
-                <Text style={styles.secondaryBtnText}>Start 3-Day Free Trial</Text>
+                <Text style={styles.secondaryBtnText}>Start 7-Day Free Trial</Text>
               </>
             )}
           </TouchableOpacity>
