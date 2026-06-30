@@ -103,6 +103,7 @@ export default function TabLayout() {
   const [showSeedConfirm, setShowSeedConfirm] = React.useState(false);
   const [isSeedLoading, setIsSeedLoading] = React.useState(false);
   const [isDemoActive, setIsDemoActive] = React.useState(false);
+  const [tempDemoActive, setTempDemoActive] = React.useState(false);
   
   const { say } = useTintin();
 
@@ -138,11 +139,32 @@ export default function TabLayout() {
 
   // Update tempSettings ONLY when businessSettings actually change from context or background load
   React.useEffect(() => {
-    setTempSettings(businessSettings);
-  }, [businessSettings]);
+    if (isSettingsOpen) {
+      setTempSettings(businessSettings);
+      setTempDemoActive(isDemoActive);
+    }
+  }, [isSettingsOpen, businessSettings, isDemoActive]);
 
   const handleSave = async () => {
     await updateSettings(tempSettings);
+    
+    // Process demo data ONLY if it changed
+    if (tempDemoActive !== isDemoActive) {
+      setIsSeedLoading(true);
+      try {
+        if (tempDemoActive) {
+          await seedDemoItems();
+        } else {
+          await clearDemoItems();
+        }
+        setIsDemoActive(tempDemoActive);
+      } catch (e) {
+        console.error(e);
+        setTempDemoActive(isDemoActive);
+      }
+      setIsSeedLoading(false);
+    }
+
     setIsSettingsOpen(false);
     setShowToast(true);
     setTimeout(() => {
@@ -155,7 +177,9 @@ export default function TabLayout() {
   // Check if demo data is currently active
   const checkDemoStatus = async () => {
     const products = await getProducts();
-    setIsDemoActive(products.some(p => p.id.startsWith('demo-')));
+    const active = products.some(p => p.id.startsWith('demo-'));
+    setIsDemoActive(active);
+    setTempDemoActive(active);
   };
 
   const doSeed = async () => {
@@ -176,40 +200,7 @@ export default function TabLayout() {
   };
 
   const handleDemoToggle = (val: boolean) => {
-    Alert.alert(
-      val ? 'Load Demo Data?' : 'Remove Demo Data?',
-      val 
-        ? 'This will add sample products and sales to let you test the app. Proceed?' 
-        : 'This will remove all sample products and sales. Proceed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Yes', 
-          onPress: () => {
-            // Optimistically update the switch UI immediately for smooth animation
-            setIsDemoActive(val);
-            setIsSeedLoading(true);
-
-            // Defer heavy storage work until after the switch finishes animating
-            InteractionManager.runAfterInteractions(async () => {
-              try {
-                if (val) {
-                  await seedDemoItems();
-                } else {
-                  await clearDemoItems();
-                }
-              } catch (e) {
-                console.error(e);
-                // Revert on failure
-                setIsDemoActive(!val);
-              } finally {
-                setIsSeedLoading(false);
-              }
-            });
-          }
-        }
-      ]
-    );
+    setTempDemoActive(val);
   };
 
   const toggleBeep = (val: boolean) => setTempSettings(prev => ({ ...prev, scannerBeep: val }));
@@ -580,12 +571,12 @@ export default function TabLayout() {
                   <View>
                     <Text style={styles.featureTitle}>Demo Data</Text>
                     <Text style={styles.featureDesc}>
-                      {isDemoActive ? 'Tap to remove mock data' : 'Load sample products & history'}
+                      {tempDemoActive ? 'Tap to remove mock data' : 'Load sample products & history'}
                     </Text>
                   </View>
                 </View>
                 <Switch
-                  value={isDemoActive}
+                  value={tempDemoActive}
                   onValueChange={handleDemoToggle}
                   disabled={isSeedLoading}
                   trackColor={{ false: Theme.colors.outlineVariant, true: Theme.colors.primary }}
