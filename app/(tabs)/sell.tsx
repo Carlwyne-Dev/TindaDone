@@ -358,12 +358,14 @@ export default function SellScreen() {
     await updateSettings(updated);
     await markWelcomeAsSeen();
     
-    // Alert the user with instructions for testing
-    Alert.alert(
-      'All Set!',
-      `Welcome to TindaDone, ${ownerName.trim()}! 🎉\n\nWant to test the app before using it? Go to the Settings tab and turn on "Seed Demo Data" to load sample products and sales.`,
-      [{ text: 'Got it!' }]
-    );
+    // Alert the user with instructions for testing after 10 seconds
+    setTimeout(() => {
+      Alert.alert(
+        'All Set!',
+        `Welcome to TindaDone, ${ownerName.trim()}! 🎉\n\nWant to test the app before using it? Go to the Settings tab and turn on "Seed Demo Data" to load sample products and sales.`,
+        [{ text: 'Got it!' }]
+      );
+    }, 10000);
     setShowWelcome(false);
   };
 

@@ -117,7 +117,7 @@ export default function TabLayout() {
 
       const ownerName = businessSettings?.ownerName ? ` ${businessSettings.ownerName}` : '';
       say(`${timeGreeting}${ownerName}! Let's make some sales!`, 'success');
-    }, 1500);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, []); // ← empty deps: fires exactly once on mount
@@ -176,26 +176,40 @@ export default function TabLayout() {
   };
 
   const handleDemoToggle = (val: boolean) => {
-    // Optimistically update the switch UI immediately for smooth animation
-    setIsDemoActive(val);
-    setIsSeedLoading(true);
+    Alert.alert(
+      val ? 'Load Demo Data?' : 'Remove Demo Data?',
+      val 
+        ? 'This will add sample products and sales to let you test the app. Proceed?' 
+        : 'This will remove all sample products and sales. Proceed?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Yes', 
+          onPress: () => {
+            // Optimistically update the switch UI immediately for smooth animation
+            setIsDemoActive(val);
+            setIsSeedLoading(true);
 
-    // Defer heavy storage work until after the switch finishes animating
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        if (val) {
-          await seedDemoItems();
-        } else {
-          await clearDemoItems();
+            // Defer heavy storage work until after the switch finishes animating
+            InteractionManager.runAfterInteractions(async () => {
+              try {
+                if (val) {
+                  await seedDemoItems();
+                } else {
+                  await clearDemoItems();
+                }
+              } catch (e) {
+                console.error(e);
+                // Revert on failure
+                setIsDemoActive(!val);
+              } finally {
+                setIsSeedLoading(false);
+              }
+            });
+          }
         }
-      } catch (e) {
-        console.error(e);
-        // Revert on failure
-        setIsDemoActive(!val);
-      } finally {
-        setIsSeedLoading(false);
-      }
-    });
+      ]
+    );
   };
 
   const toggleBeep = (val: boolean) => setTempSettings(prev => ({ ...prev, scannerBeep: val }));

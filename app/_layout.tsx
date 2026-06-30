@@ -78,12 +78,6 @@ function AppSplash() {
           resizeMode="contain"
         />
       </View>
-      {/* Small dots loader below */}
-      <ActivityIndicator
-        size="small"
-        color="#0a643b"
-        style={{ marginTop: 24 }}
-      />
     </View>
   );
 }
