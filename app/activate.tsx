@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
@@ -213,10 +214,14 @@ export default function ActivateScreen() {
           <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, marginBottom: 4 }}>Call or Text</Text>
           <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 20, color: Theme.colors.onSurface }}>09949704783</Text>
         </View>
-        <View style={{ backgroundColor: Theme.colors.surfaceVariant, padding: 16, borderRadius: 16, width: '100%', alignItems: 'center' }}>
+        <TouchableOpacity 
+          style={{ backgroundColor: Theme.colors.surfaceVariant, padding: 16, borderRadius: 16, width: '100%', alignItems: 'center' }}
+          onPress={() => Linking.openURL('https://www.facebook.com/crlwyn')}
+          activeOpacity={0.7}
+        >
           <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, marginBottom: 4 }}>Facebook</Text>
           <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 16, color: Theme.colors.primary, textAlign: 'center' }}>facebook.com/crlwyn</Text>
-        </View>
+        </TouchableOpacity>
         <Text style={{ fontFamily: Theme.typography.body, fontSize: 12, color: Theme.colors.outline, textAlign: 'center', marginTop: 40 }}>
           Device ID: {deviceCode}
         </Text>
