@@ -2,7 +2,7 @@
   "expo": {
     "name": "TindaDone",
     "slug": "tindadone",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "TindaDone: The ultimate productivity and inventory manager for small businesses.",
     "githubUrl": "https://github.com/Carlwyne-Dev/TindaDone",
     "orientation": "portrait",
@@ -16,10 +16,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.carlwyne.tindadone"
+      "bundleIdentifier": "com.carlwyne.tindadone",
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.carlwyne.tindadone",
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
