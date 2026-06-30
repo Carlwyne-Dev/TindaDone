@@ -217,7 +217,7 @@ export default function ActivateScreen() {
           <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, marginBottom: 4 }}>Facebook</Text>
           <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 16, color: Theme.colors.primary, textAlign: 'center' }}>facebook.com/crlwyn</Text>
         </View>
-        <Text style={{ fontFamily: Theme.typography.caption, fontSize: 12, color: Theme.colors.outline, textAlign: 'center', marginTop: 40 }}>
+        <Text style={{ fontFamily: Theme.typography.body, fontSize: 12, color: Theme.colors.outline, textAlign: 'center', marginTop: 40 }}>
           Device ID: {deviceCode}
         </Text>
       </View>
