@@ -661,6 +661,11 @@ export default function ProductsScreen() {
                   <Camera size={16} color="#FFF" />
                 </TouchableOpacity>
               </TouchableOpacity>
+              {photoUri && (
+                <TouchableOpacity onPress={() => setPhotoUri(undefined)} style={{ alignSelf: 'center', marginTop: 12, marginBottom: -4, padding: 8 }}>
+                  <Text style={{ color: Theme.colors.error, fontFamily: Theme.typography.bodyBold }}>Remove Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
              <Text style={styles.inputLabel}>PRODUCT NAME</Text>

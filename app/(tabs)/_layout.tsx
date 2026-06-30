@@ -182,6 +182,30 @@ export default function TabLayout() {
     setTempDemoActive(active);
   };
 
+  const handleCloseSettings = () => {
+    const hasUnsavedChanges = JSON.stringify(tempSettings) !== JSON.stringify(businessSettings) || tempDemoActive !== isDemoActive;
+    if (hasUnsavedChanges) {
+      Alert.alert(
+        'Unsaved Changes',
+        'You have unsaved changes. Are you sure you want to discard them?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Discard', 
+            style: 'destructive',
+            onPress: () => {
+              setTempSettings(businessSettings);
+              setTempDemoActive(isDemoActive);
+              setIsSettingsOpen(false);
+            }
+          }
+        ]
+      );
+    } else {
+      setIsSettingsOpen(false);
+    }
+  };
+
   const doSeed = async () => {
     setIsSeedLoading(true);
     try {
@@ -400,7 +424,7 @@ export default function TabLayout() {
       visible={isSettingsOpen}
       animationType="fade"
       transparent={true}
-      onRequestClose={() => setIsSettingsOpen(false)}
+      onRequestClose={handleCloseSettings}
       onShow={checkDemoStatus}
     >
       <View style={styles.modalOverlay}>
@@ -414,7 +438,7 @@ export default function TabLayout() {
             </View>
             <TouchableOpacity 
               style={styles.closeBtn}
-              onPress={() => setIsSettingsOpen(false)}
+              onPress={handleCloseSettings}
             >
               <X size={20} color={Theme.colors.onSurface} strokeWidth={2.5} />
             </TouchableOpacity>
