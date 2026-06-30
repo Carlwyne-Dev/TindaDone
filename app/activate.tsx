@@ -20,6 +20,7 @@ import {
   getTrialStatus, 
   startTrial,
   syncTrialWithServer,
+  isRevoked,
   TrialStatus 
 } from '../lib/license';
 import { getBusinessSettings, saveBusinessSettings } from '../lib/storage';
@@ -35,6 +36,7 @@ export default function ActivateScreen() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [trial, setTrial] = useState<TrialStatus | null>(null);
+  const [revoked, setRevoked] = useState(false);
   const [ownerName, setOwnerName] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -72,6 +74,9 @@ export default function ActivateScreen() {
 
       await syncTrialWithServer();
       
+      const isRev = await isRevoked();
+      setRevoked(isRev);
+
       const status = await getTrialStatus();
       setDeviceCode(code);
       setTrial(status);
@@ -190,6 +195,31 @@ export default function ActivateScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (revoked) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
+        <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFDAD6', justifyContent: 'center', alignItems: 'center', marginBottom: 24 }}>
+          <AlertTriangle size={40} color="#BA1A1A" />
+        </View>
+        <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 28, color: '#BA1A1A', textAlign: 'center', marginBottom: 16 }}>Access Revoked</Text>
+        <Text style={{ fontFamily: Theme.typography.body, fontSize: 16, color: Theme.colors.onSurfaceVariant, textAlign: 'center', lineHeight: 24, marginBottom: 32 }}>
+          Your access to TindaDone has been revoked. If you believe this is a mistake, please contact the administrator.
+        </Text>
+        <View style={{ backgroundColor: Theme.colors.surfaceVariant, padding: 16, borderRadius: 16, width: '100%', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, marginBottom: 4 }}>Call or Text</Text>
+          <Text style={{ fontFamily: Theme.typography.headlineBlack, fontSize: 20, color: Theme.colors.onSurface }}>09949704783</Text>
+        </View>
+        <View style={{ backgroundColor: Theme.colors.surfaceVariant, padding: 16, borderRadius: 16, width: '100%', alignItems: 'center' }}>
+          <Text style={{ fontFamily: Theme.typography.body, fontSize: 14, color: Theme.colors.onSurfaceVariant, marginBottom: 4 }}>Facebook</Text>
+          <Text style={{ fontFamily: Theme.typography.bodyBold, fontSize: 16, color: Theme.colors.primary, textAlign: 'center' }}>facebook.com/crlwyn</Text>
+        </View>
+        <Text style={{ fontFamily: Theme.typography.caption, fontSize: 12, color: Theme.colors.outline, textAlign: 'center', marginTop: 40 }}>
+          Device ID: {deviceCode}
+        </Text>
       </View>
     );
   }

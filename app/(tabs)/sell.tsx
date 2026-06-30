@@ -76,7 +76,7 @@ import { getTransactions, getProducts, saveTransaction, hasSeenWelcome, markWelc
 import { useSettings } from '../../context/SettingsContext';
 import { Product, TransactionItem, BusinessSettings, UtangRecord } from '../../lib/types';
 import { getTopSoldProducts } from '../../lib/calculations';
-import { getTrialStatus, isActivated, syncTrialWithServer, TrialStatus } from '../../lib/license';
+import { getTrialStatus, isActivated, syncTrialWithServer, syncActivationStatus, TrialStatus } from '../../lib/license';
 import { Theme } from '../../constants/Theme';
 import { useTintin } from '../../context/TintinContext';
 
@@ -370,11 +370,17 @@ export default function SellScreen() {
   };
 
   const checkLicense = async () => {
-    const active = await isActivated();
-    setActivated(active);
+    let active = await isActivated();
     
     // HYBRID SYNC: Silent check with server in background
-    await syncTrialWithServer();
+    if (active) {
+      await syncActivationStatus();
+      active = await isActivated();
+    } else {
+      await syncTrialWithServer();
+    }
+    
+    setActivated(active);
     
     const status = await getTrialStatus();
     setTrial(status);

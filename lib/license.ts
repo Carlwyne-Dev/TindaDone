@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 const ACTIVATION_STORAGE_KEY = '@tindadone/activated';
 const DEVICE_ID_STORAGE_KEY = '@tindadone/device_id';
 const TRIAL_START_KEY = '@tindadone/trial_start';
+const REVOKED_STORAGE_KEY = '@tindadone/revoked';
 const TRIAL_DAYS = 7;
 
 // 🔗 Vercel Admin API URL
@@ -82,9 +83,22 @@ export async function validateActivationKey(deviceCode: string, enteredKey: stri
   return enteredClean === expectedKey;
 }
 
+/** Returns true if this device has been revoked by admin */
+export async function isRevoked(): Promise<boolean> {
+  try {
+    const revoked = await AsyncStorage.getItem(REVOKED_STORAGE_KEY);
+    return revoked === 'true';
+  } catch {
+    return false;
+  }
+}
+
 /** Returns true if this device has already been activated */
 export async function isActivated(): Promise<boolean> {
   try {
+    const revoked = await AsyncStorage.getItem(REVOKED_STORAGE_KEY);
+    if (revoked === 'true') return false;
+
     const val = await AsyncStorage.getItem(ACTIVATION_STORAGE_KEY);
     return val === 'true';
   } catch {
@@ -129,9 +143,13 @@ export async function syncActivationStatus(): Promise<void> {
 
     if (res && res.ok) {
       const data = await res.json();
-      if (data && data.revoked) {
+      if (data && (data.revoked || data.deleted)) {
         // KILL SWITCH TRIGGERED: Remove local activation
         await AsyncStorage.removeItem(ACTIVATION_STORAGE_KEY);
+        await AsyncStorage.setItem(REVOKED_STORAGE_KEY, 'true');
+      } else if (data && !data.revoked && !data.deleted) {
+        // Restore if un-revoked
+        await AsyncStorage.removeItem(REVOKED_STORAGE_KEY);
       }
     }
   } catch (e) {
@@ -194,7 +212,10 @@ export async function syncTrialWithServer(): Promise<void> {
 
     if (res && res.ok) {
       const data = await res.json();
-      if (data && data.exists && data.startTime) {
+      if (data && (data.revoked || data.deleted)) {
+        await AsyncStorage.setItem(REVOKED_STORAGE_KEY, 'true');
+      } else if (data && data.exists && data.startTime) {
+        await AsyncStorage.removeItem(REVOKED_STORAGE_KEY);
         await AsyncStorage.setItem(TRIAL_START_KEY, data.startTime);
       }
     }
@@ -214,6 +235,11 @@ export type TrialStatus = {
 /** Checks the trial status and returns time remaining */
 export async function getTrialStatus(): Promise<TrialStatus> {
   try {
+    const revoked = await AsyncStorage.getItem(REVOKED_STORAGE_KEY);
+    if (revoked === 'true') {
+      return { active: false, daysLeft: 0, hoursLeft: 0, expired: true, notStarted: false };
+    }
+
     const startStr = await AsyncStorage.getItem(TRIAL_START_KEY);
     if (!startStr) {
       return { active: false, daysLeft: TRIAL_DAYS, hoursLeft: TRIAL_DAYS * 24, expired: false, notStarted: true };
