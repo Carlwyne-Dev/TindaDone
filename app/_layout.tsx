@@ -132,21 +132,19 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
+  // Controls our CUSTOM splash — stays true for 2.5s after fonts load
+  const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      // ⏱️ Minimum splash duration: 2.5 seconds for a premium feel
-      const MIN_SPLASH_MS = 2500;
-      const elapsed = Date.now() - appStartTime;
-      const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+      // Step 1: Hide the NATIVE splash immediately so our custom one becomes visible
+      SplashScreen.hideAsync();
 
-      setTimeout(() => {
-        SplashScreen.hideAsync();
-      }, remaining);
-
+      // Step 2: Run non-blocking init
       syncActivationStatus();
       Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -157,10 +155,17 @@ export default function RootLayout() {
         interruptionModeIOS: InterruptionModeIOS.DuckOthers,
         playThroughEarpieceAndroid: false,
       }).catch(err => console.error("Audio mode error:", err));
+
+      // Step 3: Keep our custom AppSplash visible for 2.5s minimum
+      const elapsed = Date.now() - appStartTime;
+      const remaining = Math.max(0, 2500 - elapsed);
+      const timer = setTimeout(() => setShowSplash(false), remaining);
+      return () => clearTimeout(timer);
     }
   }, [loaded]);
 
-  if (!loaded) {
+  // Show our custom splash while fonts loading OR during the 2.5s branded delay
+  if (!loaded || showSplash) {
     return <AppSplash />;
   }
 

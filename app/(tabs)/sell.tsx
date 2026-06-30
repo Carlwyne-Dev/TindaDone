@@ -1064,12 +1064,14 @@ export default function SellScreen() {
                 >
                   <Text style={[styles.payOptionText, paymentType === 'cash' && styles.payOptionTextActive]}>Cash</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.payOption, paymentType === 'gcash' && styles.payOptionActive]}
-                  onPress={() => handlePaymentTypeChange('gcash')}
-                >
-                  <Text style={[styles.payOptionText, paymentType === 'gcash' && styles.payOptionTextActive]}>GCash</Text>
-                </TouchableOpacity>
+                {businessSettings.gcashQrUri && (
+                  <TouchableOpacity 
+                    style={[styles.payOption, paymentType === 'gcash' && styles.payOptionActive]}
+                    onPress={() => handlePaymentTypeChange('gcash')}
+                  >
+                    <Text style={[styles.payOptionText, paymentType === 'gcash' && styles.payOptionTextActive]}>GCash</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={styles.paymentSummary}>
