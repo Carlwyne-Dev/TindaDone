@@ -966,14 +966,16 @@ export default function SellScreen() {
       </Animated.View>
 
       {/* Floating Scan Button */}
-      <Animated.View style={[styles.scanFAB, scanFabAnimStyle]}>
-        <TouchableOpacity 
-          style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
-          onPress={startScanning}
-        >
-          <QrCode size={30} color="#FFF" />
-        </TouchableOpacity>
-      </Animated.View>
+      {products.length > 0 && (
+        <Animated.View style={[styles.scanFAB, scanFabAnimStyle]}>
+          <TouchableOpacity 
+            style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
+            onPress={startScanning}
+          >
+            <QrCode size={30} color="#FFF" />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* Manual Qty Modal (Cross-platform) */}
       <Modal visible={qtyModalVisible} transparent animationType="fade" onRequestClose={() => setQtyModalVisible(false)}>
