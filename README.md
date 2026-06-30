@@ -5,10 +5,12 @@ TindaDone is a hybrid mobile Point-of-Sale (POS) system designed for efficiency 
 ## 🚀 Key Features
 
 - **Cloud-Synced Trial Guard:** 7-day free trial with server-side handshake (Vercel/Upstash).
-- **Admin Dashboard:** Real-time monitoring of trial activations and license generation.
+- **Admin Dashboard & Kill Switch:** Real-time monitoring of trial activations, license generation, and remote device revocation. Devices can be instantly banned and kicked out of the app.
 - **Offline Reliability:** Core POS functions work fully offline after activation.
 - **Smart Inventory:** Bulk pack support, profit margin calculations, and low-stock alerts.
-- **Security:** Hardware-linked device codes for license key generation.
+- **Utang (Credit) Tracker:** Dedicated tracker for customer credit and debt history.
+- **Payment Flexibility:** Includes GCash QR code support inside the cart module.
+- **Seed Demo Data:** One-click functionality to load sample products, sales, and credit history to test drive the app.
 
 ## 💻 Developer Setup (Laptop Sync)
 
