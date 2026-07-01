@@ -2160,7 +2160,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     includeFontPadding: false,
-    marginBottom: 2, // Slight lift to visually center with the CheckCircle icon
+    transform: [{ translateY: -2 }], // Nudge up for optical alignment with icon
   },
   // Shortcuts Style
   topProductsSection: {
@@ -2493,7 +2493,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 16,
     includeFontPadding: false,
-    marginBottom: 2, // Lifts the text to center perfectly with Chevron icon
+    transform: [{ translateY: -2 }], // Nudge up for perfect alignment with Chevron
   },
   lightingHintFloating: {
     position: 'absolute',
