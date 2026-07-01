@@ -471,18 +471,18 @@ export default function SellScreen() {
 
       if (currentQty + 1 > product.stock) {
         if (product.stock <= 0) {
-          showAlert('Out of Stock', `Ubos na ang stock ng ${product.name}! Better restock now.`, 'warning');
+          showAlert('Out of Stock', `Looks like ${product.name} is completely out of stock! Better restock soon.`, 'warning');
         } else {
-          showAlert('Stock Limit Reached', `Oops! You only have ${product.stock} available units of ${product.name} left. Ubos na!`, 'warning');
+          showAlert('Stock Limit Reached', `Oops! You only have ${product.stock} available units of ${product.name} left. No more stock to add!`, 'warning');
         }
         return prev;
       }
 
       const remainingAfterAdd = product.stock - (currentQty + 1);
       if (remainingAfterAdd <= product.lowStockThreshold && remainingAfterAdd > 0) {
-        tintin.say(`Heads up! Only ${remainingAfterAdd} ${product.name} left. Better restock soon!`, 'info');
+        tintin.say(`Heads up! Only ${remainingAfterAdd} ${product.name} left. You might want to restock soon.`, 'info');
       } else if (remainingAfterAdd === 0 && product.stock > 0) {
-        tintin.say(`Last piece of ${product.name} added! Ubos na 'to after this sale.`, 'warning');
+        tintin.say(`Last piece of ${product.name} added! You'll be out of stock after this sale.`, 'warning');
       }
 
       if (existing) {
