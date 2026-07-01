@@ -662,7 +662,7 @@ export default function ProductDetailScreen() {
             </View>
 
             <View style={styles.inputRow}>
-              <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flex: 1, marginRight: 12, justifyContent: 'flex-end' }}>
                 <Text style={styles.inputLabel}>QTY TO ADD ({isPackRestock ? 'Packs' : 'Pieces'})</Text>
                 <TextInput
                   style={[styles.input, showErrors && !qtyToAdd && styles.errorInput]}
@@ -685,7 +685,7 @@ export default function ProductDetailScreen() {
                 />
               </View>
               {isPackRestock && (
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, justifyContent: 'flex-end' }}>
                   <Text style={styles.inputLabel}>PIECES IN PACK</Text>
                   <TextInput
                     style={styles.input}

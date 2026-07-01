@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Dimensions, Text, Modal, TextInput, Switch, Alert, Platform, InteractionManager, Image, ScrollView, useWindowDimensions } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { Package, ShoppingBag, BarChart2, ReceiptText, Settings, X, Store, User, QrCode, Volume2, Vibrate as VibrateIcon, Database, Camera, Save, FileText, CheckCircle2, Plus, Upload } from 'lucide-react-native';
-import { isActivated, getTrialStatus } from '../../lib/license';
+import { isActivated, getTrialStatus, syncActivationStatus, syncTrialWithServer } from '../../lib/license';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, { 
   useAnimatedStyle, 
@@ -20,6 +20,7 @@ import { BusinessSettings } from '../../lib/types';
 import { useSettings } from '../../context/SettingsContext';
 import { useTintin } from '../../context/TintinContext';
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
 
 const TAB_BAR_MARGIN = 20;
 
@@ -164,6 +165,10 @@ export default function TabLayout() {
       }
       setIsSeedLoading(false);
     }
+
+    // Sync with server immediately to update owner name
+    syncActivationStatus();
+    syncTrialWithServer();
 
     setIsSettingsOpen(false);
     setShowToast(true);
@@ -614,6 +619,9 @@ export default function TabLayout() {
             <CheckCircle2 size={20} color="#FFF" />
             <Text style={styles.finalSaveText}>Apply Changes</Text>
           </TouchableOpacity>
+          <Text style={{ textAlign: 'center', marginTop: 12, marginBottom: 8, fontSize: 12, color: Theme.colors.outline, fontFamily: Theme.typography.body }}>
+            Version {Constants.expoConfig?.version || '1.0.0'}
+          </Text>
         </View>
       </View>
     </Modal>

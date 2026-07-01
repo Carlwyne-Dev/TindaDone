@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
+import { getBusinessSettings } from './storage';
 
 const ACTIVATION_STORAGE_KEY = '@tindadone/activated';
 const DEVICE_ID_STORAGE_KEY = '@tindadone/device_id';
@@ -135,7 +136,10 @@ export async function syncActivationStatus(): Promise<void> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const res = await fetch(`${API_BASE_URL}/api/check-status?deviceId=${deviceId}`, {
+    const settings = await getBusinessSettings();
+    const ownerNameParam = settings.ownerName ? `&ownerName=${encodeURIComponent(settings.ownerName)}` : '';
+
+    const res = await fetch(`${API_BASE_URL}/api/check-status?deviceId=${deviceId}${ownerNameParam}`, {
       signal: controller.signal
     }).catch(() => null);
     
@@ -204,7 +208,10 @@ export async function syncTrialWithServer(): Promise<void> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const res = await fetch(`${API_BASE_URL}/api/trial-status?deviceId=${deviceId}`, {
+    const settings = await getBusinessSettings();
+    const ownerNameParam = settings.ownerName ? `&ownerName=${encodeURIComponent(settings.ownerName)}` : '';
+
+    const res = await fetch(`${API_BASE_URL}/api/trial-status?deviceId=${deviceId}${ownerNameParam}`, {
       signal: controller.signal
     }).catch(() => null);
     

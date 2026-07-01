@@ -177,6 +177,7 @@ export default function SellScreen() {
 
   // Modals
   const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
+  const [isQrExpanded, setIsQrExpanded] = useState(false);
   const [utangModalVisible, setUtangModalVisible] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [qtyModalVisible, setQtyModalVisible] = useState(false);
@@ -464,21 +465,27 @@ export default function SellScreen() {
 
 
   const addToCart = (product: Product) => {
-    // PRD: Stock Warning
-    if (product.stock <= 0) {
-      tintin.say(`Note: "${product.name}" is out of stock.`, 'warning');
-    } else if (product.stock <= 5) {
-      tintin.say(`Sales are spiking for ${product.name}! It might sell out soon.`, 'info');
-    }
-
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.id);
-      if (existing) {
-        // Stock Intelligence check
-        if (existing.qty + 1 > product.stock) {
-          tintin.say(`Only ${product.stock} ${product.name} left!`, 'warning');
-          return prev;
+      const currentQty = existing ? existing.qty : 0;
+
+      if (currentQty + 1 > product.stock) {
+        if (product.stock <= 0) {
+          showAlert('Out of Stock', `"${product.name}" is currently out of stock.`, 'warning');
+        } else {
+          showAlert('Stock Limit Reached', `You have all ${product.stock} available units of "${product.name}" in the cart.`, 'warning');
         }
+        return prev;
+      }
+
+      const remainingAfterAdd = product.stock - (currentQty + 1);
+      if (remainingAfterAdd <= product.lowStockThreshold && remainingAfterAdd > 0) {
+        tintin.say(`Only ${remainingAfterAdd} left of ${product.name}!`, 'info');
+      } else if (remainingAfterAdd === 0 && product.stock > 0) {
+        tintin.say(`Last unit of ${product.name} added!`, 'warning');
+      }
+
+      if (existing) {
         return prev.map(item => 
           item.productId === product.id ? { ...item, qty: item.qty + 1 } : item
         );
@@ -695,7 +702,7 @@ export default function SellScreen() {
               <Text style={styles.letterText}>{item.name.charAt(0).toUpperCase()}</Text>
             </View>
           )}
-          {item.stock <= 5 && item.stock > 0 && (
+          {item.stock <= item.lowStockThreshold && item.stock > 0 && (
             <View style={styles.lowStockBadge}>
               <AlertTriangle size={8} color="#FFF" />
             </View>
@@ -1098,7 +1105,9 @@ export default function SellScreen() {
             {paymentType === 'gcash' && (
               <View style={styles.qrContainer}>
                 {businessSettings.gcashQrUri ? (
-                  <Image source={{ uri: businessSettings.gcashQrUri }} style={styles.qrImage} />
+                  <TouchableOpacity onPress={() => setIsQrExpanded(true)} activeOpacity={0.8}>
+                    <Image source={{ uri: businessSettings.gcashQrUri }} style={styles.qrImage} />
+                  </TouchableOpacity>
                 ) : (
                   <View style={styles.noQrPlaceholder}>
                     <CreditCard size={48} color={Theme.colors.outlineVariant} />
@@ -1348,6 +1357,25 @@ export default function SellScreen() {
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Expanded GCash QR Modal */}
+      <Modal visible={isQrExpanded} animationType="fade" transparent={true} onRequestClose={() => setIsQrExpanded(false)}>
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.9)' }]}>
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10 }}
+            onPress={() => setIsQrExpanded(false)}
+          >
+            <X size={32} color="#FFF" />
+          </TouchableOpacity>
+          {businessSettings.gcashQrUri && (
+            <Image 
+              source={{ uri: businessSettings.gcashQrUri }} 
+              style={{ width: '90%', height: '70%', resizeMode: 'contain' }} 
+            />
+          )}
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

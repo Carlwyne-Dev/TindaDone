@@ -728,7 +728,7 @@ export default function ProductsScreen() {
 
               {isBulkMode && (
                 <View style={styles.inputRow}>
-                  <View style={{ flex: 1, marginRight: 12 }}>
+                  <View style={{ flex: 1, marginRight: 12, justifyContent: 'flex-end' }}>
                     <Text style={styles.inputLabel}>PCS PER PACK</Text>
                     <TextInput 
                       style={styles.input} 
@@ -739,7 +739,7 @@ export default function ProductsScreen() {
                       onChangeText={(t) => updatePackSize(t.replace(/[^0-9]/g, ''))} 
                     />
                   </View>
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, justifyContent: 'flex-end' }}>
                     <Text style={styles.inputLabel}>PACK COST (Buying ₱)</Text>
                     <TextInput 
                       style={styles.input} 
@@ -754,7 +754,7 @@ export default function ProductsScreen() {
               )}
 
               <View style={styles.inputRow}>
-                <View style={{ flex: 1, marginRight: isBulkMode ? 12 : 0 }}>
+                <View style={{ flex: 1, marginRight: isBulkMode ? 12 : 0, justifyContent: 'flex-end' }}>
                   <Text style={styles.inputLabel}>UNIT COST (Buying ₱)</Text>
                   <TextInput 
                     style={[styles.input, showErrors && !costPrice && styles.errorInput]} 
@@ -766,7 +766,7 @@ export default function ProductsScreen() {
                   />
                 </View>
                 {isBulkMode && (
-                  <View style={{ flex: 1 }}>
+                  <View style={{ flex: 1, justifyContent: 'flex-end' }}>
                     <Text style={styles.inputLabel}>PACK PRICE (Selling ₱)</Text>
                     <TextInput 
                       style={styles.input} 
