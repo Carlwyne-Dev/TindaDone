@@ -471,18 +471,18 @@ export default function SellScreen() {
 
       if (currentQty + 1 > product.stock) {
         if (product.stock <= 0) {
-          showAlert('Out of Stock', `"${product.name}" is currently out of stock.`, 'warning');
+          showAlert('Out of Stock', `Ubos na ang stock ng ${product.name}! Better restock now.`, 'warning');
         } else {
-          showAlert('Stock Limit Reached', `You have all ${product.stock} available units of "${product.name}" in the cart.`, 'warning');
+          showAlert('Stock Limit Reached', `Oops! You only have ${product.stock} available units of ${product.name} left. Ubos na!`, 'warning');
         }
         return prev;
       }
 
       const remainingAfterAdd = product.stock - (currentQty + 1);
       if (remainingAfterAdd <= product.lowStockThreshold && remainingAfterAdd > 0) {
-        tintin.say(`Only ${remainingAfterAdd} left of ${product.name}!`, 'info');
+        tintin.say(`Heads up! Only ${remainingAfterAdd} ${product.name} left. Better restock soon!`, 'info');
       } else if (remainingAfterAdd === 0 && product.stock > 0) {
-        tintin.say(`Last unit of ${product.name} added!`, 'warning');
+        tintin.say(`Last piece of ${product.name} added! Ubos na 'to after this sale.`, 'warning');
       }
 
       if (existing) {
