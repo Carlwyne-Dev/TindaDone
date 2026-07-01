@@ -2159,6 +2159,8 @@ const styles = StyleSheet.create({
     fontFamily: Theme.typography.headlineBlack,
     color: '#FFF',
     fontSize: 18,
+    includeFontPadding: false,
+    marginBottom: 2, // Slight lift to visually center with the CheckCircle icon
   },
   // Shortcuts Style
   topProductsSection: {
@@ -2490,7 +2492,8 @@ const styles = StyleSheet.create({
     fontFamily: Theme.typography.headlineBlack,
     color: '#FFF',
     fontSize: 16,
-    paddingTop: 2,
+    includeFontPadding: false,
+    marginBottom: 2, // Lifts the text to center perfectly with Chevron icon
   },
   lightingHintFloating: {
     position: 'absolute',
